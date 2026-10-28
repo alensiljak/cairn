@@ -19,3 +19,31 @@ Waymarq is a tool to help map roadside features in OpenStreetMap. It is designed
 - voice notes
 - undo button
 - keep screen on
+- expand to "walking mode" in addition to "driving mode"
+
+## Tech Stack
+
+- SvelteKit (TypeScript, static SPA / PWA via `adapter-static`)
+- MapLibre GL JS for maps
+- npm
+
+## Development
+
+```sh
+npm install
+npm run dev
+```
+
+## License
+
+Copyright (C) Alen Šiljak
+
+Waymarq is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version. See [LICENSE](LICENSE).
+
+## Deployment
+
+Hosted as static assets on Cloudflare (config in `wrangler.jsonc`). First run `npx wrangler login`, then:
+
+```sh
+npm run deploy
+```
