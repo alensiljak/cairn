@@ -1,10 +1,10 @@
-# Waymarq
+# Cairn
 
 One-tap roadside mapping for OSM
 
 ## Purpose
 
-Waymarq is a tool to help map roadside features in OpenStreetMap. It is designed to be used while travelling, to quickly and easily map roadside features such as speed limits, EV chargers, petrol stations, parkings, traffic lights, settlements, etc. It is designed to be used with a mobile device using as few taps as possible.
+Cairn is a tool to help map roadside features in OpenStreetMap. It is designed to be used while travelling, to quickly and easily map roadside features such as speed limits, EV chargers, petrol stations, parkings, traffic lights, settlements, etc. It is designed to be used with a mobile device using as few taps as possible.
 
 ## Planned Features
 
