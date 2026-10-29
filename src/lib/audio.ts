@@ -41,8 +41,8 @@ export function playRecordStart() {
 
 /** Two falling tones: recording ended (the start beep is a single tone). */
 export function playRecordStop() {
-	tone(1100, 0, 0.14);
-	tone(450, 0.24, 0.2);
+	tone(1300, 0, 0.14);
+	tone(650, 0.18, 0.2);
 }
 
 /** One low buzz: not saved. */

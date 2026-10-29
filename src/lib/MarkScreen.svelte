@@ -61,82 +61,28 @@
 	}
 </script>
 
-<div class="screen">
-	<div class="grid">
+<div class="flex h-full flex-col">
+	<!-- Portrait: 2 columns x 3 rows; landscape: 3 x 2, side padding leaves room for the swipe hints. -->
+	<div
+		class="grid min-h-0 flex-1 grid-cols-2 grid-rows-3 gap-4 p-4 landscape:grid-cols-3 landscape:grid-rows-2 landscape:px-10"
+	>
 		{#each items as item (item.id)}
-			<div class="cell">
-				<button class:saved={flash === item.id} onclick={() => mark(item)} aria-label={item.label}>
+			<!-- Size container: lets the button fit the cell's smaller dimension. -->
+			<div class="grid place-items-center [container-type:size]">
+				<!-- Square, as large as fits the cell in either orientation. -->
+				<button
+					class="box-border h-[min(100cqw,100cqh)] w-[min(100cqw,100cqh)] cursor-pointer rounded-3xl border-[0.2rem] p-3 transition-colors duration-150 [-webkit-tap-highlight-color:transparent] {flash ===
+					item.id
+						? 'border-go bg-go-dark'
+						: 'border-line bg-tile active:bg-tile-active'}"
+					onclick={() => mark(item)}
+					aria-label={item.label}
+				>
 					{@render sign(item)}
 				</button>
 			</div>
 		{/each}
 	</div>
-	<p class="status">{result || gps.status}</p>
+	<!-- Side padding keeps long messages clear of the swipe hints. -->
+	<p class="m-0 px-10 pt-1 pb-2 text-center text-[0.85rem] text-muted">{result || gps.status}</p>
 </div>
-
-<style>
-	.screen {
-		height: 100%;
-		display: flex;
-		flex-direction: column;
-	}
-
-	.grid {
-		flex: 1;
-		min-height: 0;
-		display: grid;
-		gap: 1rem;
-		padding: 1rem;
-		/* Portrait: 2 columns x 3 rows */
-		grid-template-columns: repeat(2, minmax(0, 1fr));
-		grid-template-rows: repeat(3, minmax(0, 1fr));
-	}
-
-	@media (orientation: landscape) {
-		.grid {
-			/* Landscape: 3 columns x 2 rows; side padding leaves room for the swipe hints. */
-			grid-template-columns: repeat(3, minmax(0, 1fr));
-			grid-template-rows: repeat(2, minmax(0, 1fr));
-			padding-inline: 2.5rem;
-		}
-	}
-
-	.cell {
-		/* Size container: lets the button fit the cell's smaller dimension. */
-		container-type: size;
-		display: grid;
-		place-items: center;
-	}
-
-	button {
-		/* Square, as large as fits the cell in either orientation. */
-		width: min(100cqw, 100cqh);
-		height: min(100cqw, 100cqh);
-		padding: 0.75rem;
-		border: 0.2rem solid #333;
-		border-radius: 1.5rem;
-		background: #222;
-		box-sizing: border-box;
-		cursor: pointer;
-		-webkit-tap-highlight-color: transparent;
-		transition: background 0.15s;
-	}
-
-	button:active {
-		background: #3a3a3a;
-	}
-
-	button.saved {
-		background: var(--color-go-dark);
-		border-color: var(--color-go);
-	}
-
-	.status {
-		margin: 0;
-		/* Side padding keeps long messages clear of the swipe hints. */
-		padding: 0.25rem 2.5rem 0.5rem;
-		font-size: 0.85rem;
-		color: #999;
-		text-align: center;
-	}
-</style>

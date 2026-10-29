@@ -1,6 +1,6 @@
 /*
- * Tailwind without its base reset (preflight): the existing component styles rely on browser
- * defaults, so only the theme variables and utility classes are loaded.
+ * Tailwind without its base reset (preflight): browser defaults are kept, so only the theme
+ * variables and utility classes are loaded.
  */
 @layer theme, base, components, utilities;
 @import 'tailwindcss/theme.css' layer(theme);
@@ -22,6 +22,24 @@
 	--color-night: #111111;
 	--color-panel: #1c1c1c;
 	--color-raised: #2c2c2c;
+	--color-tile: #222222;
+	--color-tile-active: #3a3a3a;
+	--color-line: #333333;
+	--color-edge: #444444;
 	--color-ink: #eeeeee;
 	--color-muted: #999999;
+	--color-link: #6cb4ff;
+}
+
+@layer base {
+	html,
+	body {
+		margin: 0;
+		height: 100%;
+		/* No pull-to-refresh: swiping down opens the voice sheet. */
+		overscroll-behavior: none;
+		background: var(--color-night);
+		color: var(--color-ink);
+		font-family: system-ui, sans-serif;
+	}
 }

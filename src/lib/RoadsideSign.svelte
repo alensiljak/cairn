@@ -40,7 +40,7 @@
 {#if kind === 'settlement-enter' || kind === 'settlement-exit'}
 	<SettlementSign exit={kind === 'settlement-exit'} />
 {:else}
-	<svg viewBox="0 0 100 100" aria-hidden="true">
+	<svg class="block h-full w-full" viewBox="0 0 100 100" aria-hidden="true">
 		{#if kind === 'traffic-signals'}
 			<rect x="32" y="8" width="36" height="84" rx="8" fill="#111" stroke="#888" stroke-width="3" />
 			<circle cx="50" cy="26" r="9" fill="#e53935" />
@@ -64,11 +64,3 @@
 		{/if}
 	</svg>
 {/if}
-
-<style>
-	svg {
-		width: 100%;
-		height: 100%;
-		display: block;
-	}
-</style>

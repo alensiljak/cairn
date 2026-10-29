@@ -106,23 +106,34 @@
 		'/about': 'About'
 	};
 	const title = $derived(category?.label ?? titles[page.url.pathname] ?? 'Cairn');
+
+	const headerButton = 'flex rounded-lg border-0 bg-raised p-2 text-ink';
+	// Faint swipe hints: bottom corners in portrait, vertical middle of the sides in landscape.
+	const hint =
+		'pointer-events-none absolute bottom-2 flex text-ink opacity-30 landscape:top-1/2 landscape:bottom-auto landscape:-translate-y-1/2';
 </script>
 
-<div class="app">
-	<header>
+<div
+	class="box-border flex h-dvh flex-col pt-[env(safe-area-inset-top)] pr-[env(safe-area-inset-right)] pb-[env(safe-area-inset-bottom)] pl-[env(safe-area-inset-left)]"
+>
+	<header class="flex h-12 flex-none items-center gap-2 bg-panel px-2">
 		{#if category}
-			<button onclick={() => (menuOpen = true)} aria-label="Open menu"><Menu /></button>
+			<button class={headerButton} onclick={() => (menuOpen = true)} aria-label="Open menu">
+				<Menu />
+			</button>
 		{:else}
-			<a href={resolve('/')} aria-label="Back"><ChevronLeft /></a>
+			<a class={headerButton} href={resolve('/')} aria-label="Back"><ChevronLeft /></a>
 		{/if}
-		<h1>{title}</h1>
+		<h1 class="m-0 flex-1 text-[1.1rem]">{title}</h1>
 		{#if category}
 			<VoiceButton onclick={() => (voiceOpen = !voiceOpen)} sheetOpen={voiceOpen} />
-			<a href={resolve('/items')} aria-label="Items"><List /></a>
+			<a class={headerButton} href={resolve('/items')} aria-label="Items"><List /></a>
 		{/if}
 	</header>
-	<div class="stage">
+	<div class="relative min-h-0 flex-1">
+		<!-- Vertical scrolling stays native, except on category pages (swipe down is ours there). -->
 		<main
+			class="relative h-full overflow-hidden"
 			ontouchstart={onTouchStart}
 			ontouchmove={onTouchMove}
 			ontouchend={onTouchEnd}
@@ -130,9 +141,11 @@
 			style:touch-action={category ? 'none' : 'pan-y'}
 		>
 			{#key page.url.pathname}
+				<!-- Stacked so the outgoing and incoming pages can slide side by side. -->
 				<div
-					class="page"
-					class:dragging={drag?.active}
+					class="absolute inset-0 overflow-auto bg-night {drag?.active
+						? 'transition-none'
+						: 'transition-transform duration-200'}"
 					style:transform={drag?.path === page.url.pathname ? `translateX(${drag.dx}px)` : undefined}
 					in:fly={slideParams(1)}
 					out:fly={slideParams(-1)}
@@ -145,8 +158,8 @@
 			<VoiceSheet bind:open={voiceOpen} />
 		{/if}
 		{#if canSwipe}
-			<span class="hint prev" aria-hidden="true"><ChevronLeft /></span>
-			<span class="hint next" aria-hidden="true"><ChevronRight /></span>
+			<span class="{hint} left-3 landscape:left-2" aria-hidden="true"><ChevronLeft /></span>
+			<span class="{hint} right-3 landscape:right-2" aria-hidden="true"><ChevronRight /></span>
 		{/if}
 	</div>
 </div>
@@ -155,111 +168,3 @@
 
 <Sidebar bind:open={menuOpen} />
 <ConfirmDialog />
-
-<style>
-	:global(html, body) {
-		margin: 0;
-		height: 100%;
-		/* No pull-to-refresh: swiping down opens the voice sheet. */
-		overscroll-behavior: none;
-		background: #111;
-		color: #eee;
-		font-family: system-ui, sans-serif;
-	}
-
-	.app {
-		height: 100dvh;
-		display: flex;
-		flex-direction: column;
-		padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom)
-			env(safe-area-inset-left);
-		box-sizing: border-box;
-	}
-
-	header {
-		display: flex;
-		align-items: center;
-		gap: 0.5rem;
-		padding: 0 0.5rem;
-		height: 3rem;
-		flex: none;
-		background: #1c1c1c;
-	}
-
-	h1 {
-		margin: 0;
-		font-size: 1.1rem;
-		flex: 1;
-	}
-
-	header a,
-	header button {
-		display: flex;
-		border: 0;
-		color: #eee;
-		padding: 0.5rem;
-		border-radius: 0.5rem;
-		background: #2c2c2c;
-	}
-
-	.stage {
-		position: relative;
-		flex: 1;
-		min-height: 0;
-	}
-
-	main {
-		position: relative;
-		height: 100%;
-		overflow: hidden; /* clips pages sliding in and out */
-		/* Vertical scrolling stays native; horizontal swipes are ours. */
-		touch-action: pan-y;
-	}
-
-	/* Stacked so the outgoing and incoming pages can slide side by side. */
-	.page {
-		position: absolute;
-		inset: 0;
-		overflow: auto;
-		background: #111;
-		transition: transform 0.2s;
-	}
-
-	.page.dragging {
-		transition: none;
-	}
-
-	/* Faint swipe hints: bottom corners in portrait, vertical middle of the sides in landscape. */
-	.hint {
-		position: absolute;
-		bottom: 0.5rem;
-		display: flex;
-		color: #eee;
-		opacity: 0.3;
-		pointer-events: none;
-	}
-
-	.prev {
-		left: 0.75rem;
-	}
-
-	.next {
-		right: 0.75rem;
-	}
-
-	@media (orientation: landscape) {
-		.hint {
-			bottom: auto;
-			top: 50%;
-			transform: translateY(-50%);
-		}
-
-		.prev {
-			left: 0.5rem;
-		}
-
-		.next {
-			right: 0.5rem;
-		}
-	}
-</style>

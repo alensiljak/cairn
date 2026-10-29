@@ -7,17 +7,23 @@
 		unlockAudio();
 		playSuccess();
 	}
+
+	const fieldset = 'flex flex-col gap-4 rounded-xl border border-raised';
+	const label = 'flex items-start gap-3';
+	const field = 'mt-[0.2rem] size-[1.2rem]';
+	const select = 'ml-auto rounded-lg border-0 bg-raised p-2 text-ink [font:inherit]';
+	const hint = 'mt-1 block text-muted';
 </script>
 
-<div class="settings">
-	<fieldset>
+<div class="flex flex-col gap-4 p-4">
+	<fieldset class={fieldset}>
 		<legend>Start screen</legend>
-		<label>
+		<label class={label}>
 			<span>
 				Open the app in
-				<small>The category shown at start, ready to record.</small>
+				<small class={hint}>The category shown at start, ready to record.</small>
 			</span>
-			<select bind:value={settings.defaultCategory} onchange={saveSettings}>
+			<select class={select} bind:value={settings.defaultCategory} onchange={saveSettings}>
 				{#each categories as c (c.id)}
 					<option value={c.id}>{c.label}</option>
 				{/each}
@@ -25,10 +31,11 @@
 		</label>
 	</fieldset>
 
-	<fieldset>
+	<fieldset class={fieldset}>
 		<legend>Location</legend>
-		<label>
+		<label class={label}>
 			<input
+				class={field}
 				type="radio"
 				value="continuous"
 				bind:group={settings.gpsMode}
@@ -36,14 +43,22 @@
 			/>
 			<span>
 				Continuous
-				<small>Keeps GPS on while the app is open. Instant saves, uses more battery.</small>
+				<small class={hint}>
+					Keeps GPS on while the app is open. Instant saves, uses more battery.
+				</small>
 			</span>
 		</label>
-		<label>
-			<input type="radio" value="on-demand" bind:group={settings.gpsMode} onchange={saveSettings} />
+		<label class={label}>
+			<input
+				class={field}
+				type="radio"
+				value="on-demand"
+				bind:group={settings.gpsMode}
+				onchange={saveSettings}
+			/>
 			<span>
 				On demand
-				<small>
+				<small class={hint}>
 					Requests a position on each tap, reusing one from the last few seconds, e.g. from a
 					running navigation app. May take a moment if none is available.
 				</small>
@@ -51,23 +66,30 @@
 		</label>
 	</fieldset>
 
-	<fieldset>
+	<fieldset class={fieldset}>
 		<legend>Feedback</legend>
-		<label>
-			<input type="checkbox" bind:checked={settings.sound} onchange={saveSettings} />
+		<label class={label}>
+			<input class={field} type="checkbox" bind:checked={settings.sound} onchange={saveSettings} />
 			<span>Sound when a marker is saved</span>
 		</label>
-		<button onclick={testSound}>Test sound</button>
+		<button
+			class="self-start rounded-lg border-0 bg-raised px-4 py-2 text-ink"
+			onclick={testSound}
+		>
+			Test sound
+		</button>
 	</fieldset>
 
-	<fieldset>
+	<fieldset class={fieldset}>
 		<legend>Voice notes</legend>
-		<label>
+		<label class={label}>
 			<span>
 				Note length
-				<small>Recording stops by itself after this long; tap the microphone to end sooner.</small>
+				<small class={hint}>
+					Recording stops by itself after this long; tap the microphone to end sooner.
+				</small>
 			</span>
-			<select bind:value={settings.voiceSeconds} onchange={saveSettings}>
+			<select class={select} bind:value={settings.voiceSeconds} onchange={saveSettings}>
 				{#each [5, 10, 20, 30] as s (s)}
 					<option value={s}>{s} s</option>
 				{/each}
@@ -75,57 +97,3 @@
 		</label>
 	</fieldset>
 </div>
-
-<style>
-	.settings {
-		padding: 1rem;
-		display: flex;
-		flex-direction: column;
-		gap: 1rem;
-	}
-
-	fieldset {
-		border: 1px solid #2c2c2c;
-		border-radius: 0.75rem;
-		display: flex;
-		flex-direction: column;
-		gap: 1rem;
-	}
-
-	label {
-		display: flex;
-		gap: 0.75rem;
-		align-items: flex-start;
-	}
-
-	input {
-		margin-top: 0.2rem;
-		width: 1.2rem;
-		height: 1.2rem;
-	}
-
-	select {
-		margin-left: auto;
-		padding: 0.5rem;
-		border-radius: 0.5rem;
-		border: 0;
-		background: #2c2c2c;
-		color: #eee;
-		font: inherit;
-	}
-
-	small {
-		display: block;
-		color: #999;
-		margin-top: 0.25rem;
-	}
-
-	button {
-		align-self: flex-start;
-		border: 0;
-		border-radius: 0.5rem;
-		padding: 0.5rem 1rem;
-		background: #2c2c2c;
-		color: #eee;
-	}
-</style>

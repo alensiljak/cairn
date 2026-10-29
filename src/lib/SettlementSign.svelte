@@ -3,7 +3,7 @@
 	let { exit = false }: { exit?: boolean } = $props();
 </script>
 
-<svg viewBox="0 0 100 100" aria-hidden="true">
+<svg class="block h-full w-full" viewBox="0 0 100 100" aria-hidden="true">
 	<rect x="4" y="18" width="92" height="64" rx="6" fill="#fff" stroke="#111" stroke-width="3" />
 	<g fill="#111">
 		<polygon points="12,54 23,41 34,54 34,70 12,70" />
@@ -24,11 +24,3 @@
 		<line x1="90" y1="22" x2="10" y2="78" stroke="#d00" stroke-width="6" stroke-linecap="round" />
 	{/if}
 </svg>
-
-<style>
-	svg {
-		width: 100%;
-		height: 100%;
-		display: block;
-	}
-</style>

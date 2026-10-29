@@ -2,7 +2,7 @@
 	let { value }: { value: number | string } = $props();
 </script>
 
-<svg viewBox="0 0 100 100" aria-hidden="true">
+<svg class="block h-full w-full" viewBox="0 0 100 100" aria-hidden="true">
 	<circle cx="50" cy="50" r="48" fill="#fff" />
 	<circle cx="50" cy="50" r="38" fill="none" stroke="#d00" stroke-width="14" />
 	<text
@@ -16,11 +16,3 @@
 		fill="#111">{value}</text
 	>
 </svg>
-
-<style>
-	svg {
-		width: 100%;
-		height: 100%;
-		display: block;
-	}
-</style>

@@ -33,11 +33,11 @@
 	onMount(refresh);
 </script>
 
-<ul>
+<ul class="m-0 list-none px-4 py-2">
 	{#each markers as m (m.id)}
-		<li>
-			<div class="info">
-				<strong
+		<li class="flex items-center gap-4 border-b border-raised py-3">
+			<div class="flex flex-1 flex-col text-[0.85rem] text-muted">
+				<strong class="text-base text-ink"
 					>{m.audio
 						? 'Voice note'
 						: Object.entries(m.tags)
@@ -54,51 +54,17 @@
 					<audio controls preload="none" src={audioUrls.get(m.id!)}></audio>
 				{/if}
 			</div>
-			<button onclick={() => remove(m)} aria-label="Delete">✕</button>
+			<button
+				class="rounded-lg border-0 bg-raised px-3 py-2 text-ink"
+				onclick={() => remove(m)}
+				aria-label="Delete">✕</button
+			>
 		</li>
 	{:else}
-		{#if loaded}<li class="empty">No items yet.</li>{/if}
+		{#if loaded}
+			<li class="flex items-center justify-center gap-4 border-b border-raised py-3 text-muted">
+				No items yet.
+			</li>
+		{/if}
 	{/each}
 </ul>
-
-<style>
-	ul {
-		list-style: none;
-		margin: 0;
-		padding: 0.5rem 1rem;
-	}
-
-	li {
-		display: flex;
-		align-items: center;
-		gap: 1rem;
-		padding: 0.75rem 0;
-		border-bottom: 1px solid #2c2c2c;
-	}
-
-	.info {
-		flex: 1;
-		display: flex;
-		flex-direction: column;
-		font-size: 0.85rem;
-		color: #999;
-	}
-
-	strong {
-		font-size: 1rem;
-		color: #eee;
-	}
-
-	button {
-		border: 0;
-		border-radius: 0.5rem;
-		padding: 0.5rem 0.75rem;
-		background: #2c2c2c;
-		color: #eee;
-	}
-
-	.empty {
-		color: #999;
-		justify-content: center;
-	}
-</style>

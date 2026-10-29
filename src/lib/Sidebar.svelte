@@ -9,21 +9,39 @@
 	let { open = $bindable(false) }: { open: boolean } = $props();
 
 	const close = () => (open = false);
+
+	const item =
+		'flex items-center gap-3 rounded-lg border-0 bg-transparent px-2 py-3 text-ink no-underline [font:inherit] aria-[current=page]:bg-raised';
 </script>
 
 <svelte:window onkeydown={(e) => e.key === 'Escape' && close()} />
 
-<div class="backdrop" class:open onclick={close} role="presentation"></div>
+<div
+	class="fixed inset-0 z-10 bg-black/60 transition-opacity duration-200 {open
+		? 'pointer-events-auto opacity-100'
+		: 'pointer-events-none opacity-0'}"
+	onclick={close}
+	role="presentation"
+></div>
 
-<nav class:open aria-label="Menu" inert={!open}>
-	<div class="top">
+<nav
+	class="fixed top-0 bottom-0 left-0 z-11 box-border w-[min(18rem,85vw)] overflow-y-auto bg-panel pt-[env(safe-area-inset-top)] pr-2 pb-[env(safe-area-inset-bottom)] pl-[env(safe-area-inset-left)] transition-transform duration-200 {open
+		? 'translate-x-0'
+		: '-translate-x-full'}"
+	aria-label="Menu"
+	inert={!open}
+>
+	<div class="flex h-12 items-center justify-between pl-2 text-[1.1rem] font-semibold">
 		<span>Cairn</span>
-		<button onclick={close} aria-label="Close menu"><X /></button>
+		<button class={item} onclick={close} aria-label="Close menu"><X /></button>
 	</div>
 
-	<h2>Categories</h2>
+	<h2 class="mt-4 mb-1 ml-2 text-xs font-semibold tracking-wider text-muted uppercase">
+		Categories
+	</h2>
 	{#each categories as c (c.id)}
 		<a
+			class={item}
 			href={resolve(c.path)}
 			onclick={close}
 			aria-current={page.url.pathname === c.path ? 'page' : undefined}
@@ -33,9 +51,10 @@
 		</a>
 	{/each}
 
-	<hr />
+	<hr class="my-3 h-px border-0 bg-line" />
 
 	<a
+		class={item}
 		href={resolve('/settings')}
 		onclick={close}
 		aria-current={page.url.pathname === '/settings' ? 'page' : undefined}
@@ -43,6 +62,7 @@
 		<Settings /> Settings
 	</a>
 	<a
+		class={item}
 		href={resolve('/about')}
 		onclick={close}
 		aria-current={page.url.pathname === '/about' ? 'page' : undefined}
@@ -50,82 +70,3 @@
 		<Info /> About
 	</a>
 </nav>
-
-<style>
-	.backdrop {
-		position: fixed;
-		inset: 0;
-		background: rgb(0 0 0 / 0.6);
-		opacity: 0;
-		pointer-events: none;
-		transition: opacity 0.2s;
-		z-index: 10;
-	}
-
-	.backdrop.open {
-		opacity: 1;
-		pointer-events: auto;
-	}
-
-	nav {
-		position: fixed;
-		top: 0;
-		bottom: 0;
-		left: 0;
-		width: min(18rem, 85vw);
-		box-sizing: border-box;
-		padding: env(safe-area-inset-top) 0.5rem env(safe-area-inset-bottom) env(safe-area-inset-left);
-		background: #1c1c1c;
-		transform: translateX(-100%);
-		transition: transform 0.2s;
-		z-index: 11;
-		overflow-y: auto;
-	}
-
-	nav.open {
-		transform: none;
-	}
-
-	.top {
-		display: flex;
-		align-items: center;
-		justify-content: space-between;
-		height: 3rem;
-		padding-left: 0.5rem;
-		font-weight: 600;
-		font-size: 1.1rem;
-	}
-
-	h2 {
-		margin: 1rem 0 0.25rem 0.5rem;
-		font-size: 0.75rem;
-		font-weight: 600;
-		text-transform: uppercase;
-		letter-spacing: 0.05em;
-		color: #999;
-	}
-
-	a,
-	button {
-		display: flex;
-		align-items: center;
-		gap: 0.75rem;
-		padding: 0.75rem 0.5rem;
-		border: 0;
-		border-radius: 0.5rem;
-		background: none;
-		color: #eee;
-		font: inherit;
-		text-decoration: none;
-	}
-
-	a[aria-current='page'] {
-		background: #2c2c2c;
-	}
-
-	hr {
-		border: 0;
-		border-top: 1px solid #333;
-		margin: 0.75rem 0;
-	}
-</style>
