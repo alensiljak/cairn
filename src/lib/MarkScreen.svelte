@@ -127,8 +127,8 @@
 	}
 
 	button.saved {
-		background: #1f6b2f;
-		border-color: #3fbf5a;
+		background: var(--color-go-dark);
+		border-color: var(--color-go);
 	}
 
 	.status {

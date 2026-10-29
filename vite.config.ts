@@ -1,5 +1,6 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { sveltekit } from '@sveltejs/kit/vite';
+import tailwindcss from '@tailwindcss/vite';
 import adapter from '@sveltejs/adapter-static';
 import { defineConfig } from 'vitest/config';
 
@@ -14,6 +15,7 @@ const https =
 
 export default defineConfig({
 	plugins: [
+		tailwindcss(),
 		sveltekit({
 			// Static SPA: all work happens client-side (GPS, wake lock, mic, OSM API).
 			adapter: adapter({ fallback: 'index.html' })

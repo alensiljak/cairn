@@ -8,6 +8,8 @@
 	import ChevronRight from '@lucide/svelte/icons/chevron-right';
 	import List from '@lucide/svelte/icons/list';
 	import Menu from '@lucide/svelte/icons/menu';
+	import '../app.css';
+	import ConfirmDialog from '../lib/ConfirmDialog.svelte';
 	import Sidebar from '../lib/Sidebar.svelte';
 	import VoiceButton from '../lib/VoiceButton.svelte';
 	import VoiceSheet from '../lib/VoiceSheet.svelte';
@@ -152,6 +154,7 @@
 <svelte:window onkeydown={onKeydown} />
 
 <Sidebar bind:open={menuOpen} />
+<ConfirmDialog />
 
 <style>
 	:global(html, body) {

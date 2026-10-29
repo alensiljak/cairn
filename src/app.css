@@ -1,0 +1,27 @@
+/*
+ * Tailwind without its base reset (preflight): the existing component styles rely on browser
+ * defaults, so only the theme variables and utility classes are loaded.
+ */
+@layer theme, base, components, utilities;
+@import 'tailwindcss/theme.css' layer(theme);
+@import 'tailwindcss/utilities.css' layer(utilities);
+
+/*
+ * App palette: the three traffic light colours carry meaning (stop = error/destructive,
+ * caution = busy/starting, go = success/recording ok), on a dark neutral base. Each colour has a
+ * dark variant for filled backgrounds. Also available as CSS variables, e.g. var(--color-go).
+ */
+@theme {
+	--color-stop: #e53935;
+	--color-stop-dark: #8e2323;
+	--color-caution: #fbc02d;
+	--color-caution-dark: #6b5a1f;
+	--color-go: #43a047;
+	--color-go-dark: #1f6b2f;
+
+	--color-night: #111111;
+	--color-panel: #1c1c1c;
+	--color-raised: #2c2c2c;
+	--color-ink: #eeeeee;
+	--color-muted: #999999;
+}
