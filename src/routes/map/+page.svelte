@@ -497,9 +497,9 @@
 	}
 	:global(.cairn-popup-root .maplibregl-popup-close-button) {
 		border-radius: 0 14px 0 8px;
-		font-size: 1.1rem;
-		width: 26px;
-		height: 26px;
+		font-size: 1.5rem;
+		width: 40px;
+		height: 40px;
 	}
 	:global(.cairn-popup) {
 		display: flex;
@@ -519,8 +519,8 @@
 	}
 	:global(.cairn-popup-actions) {
 		display: flex;
-		gap: 8px;
-		margin-top: 6px;
+		gap: 12px;
+		margin-top: 8px;
 	}
 	:global(.cairn-popup-neutral) {
 		background: #616161 !important;
@@ -534,11 +534,11 @@
 		display: flex;
 		align-items: center;
 		justify-content: center;
-		width: 36px;
-		height: 36px;
+		width: 48px;
+		height: 48px;
 		padding: 0;
 		border: 0;
-		border-radius: 8px;
+		border-radius: 10px;
 		background: #fbc02d;
 		color: #111111;
 		cursor: pointer;
@@ -552,6 +552,10 @@
 			filter: brightness(1.15);
 			box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.3);
 		}
+	}
+	:global(.cairn-popup-button svg) {
+		width: 26px;
+		height: 26px;
 	}
 	:global(.cairn-popup-button:active) {
 		transform: scale(0.9);
