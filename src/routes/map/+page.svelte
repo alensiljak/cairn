@@ -40,8 +40,15 @@
 	onMount(() => {
 		let disposed = false;
 		(async () => {
-			const [maplibre, markers] = await Promise.all([import('maplibre-gl'), listMarkers()]);
+			const [maplibre, { default: workerUrl }, markers] = await Promise.all([
+				import('maplibre-gl'),
+				// MapLibre looks for its worker next to its own module, which the bundler doesn't
+				// emit; the host serves index.html for the missing file and the worker fails to load.
+				import('maplibre-gl/dist/maplibre-gl-worker.mjs?url'),
+				listMarkers()
+			]);
 			if (disposed) return;
+			maplibre.setWorkerUrl(workerUrl);
 
 			const data = collection(markers);
 			count = data.features.length;
