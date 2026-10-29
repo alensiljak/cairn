@@ -1,5 +1,6 @@
 <script lang="ts">
-	import { mount, onDestroy, onMount, unmount } from 'svelte';
+	import { flushSync, mount, onDestroy, onMount, unmount } from 'svelte';
+	import { roadsideFeatureOf } from '../../lib/presets';
 	import MarkerIcon from '../../lib/MarkerIcon.svelte';
 	import type {
 		GeoJSONSource,
@@ -21,6 +22,9 @@
 	const TAGGED = '#43a047';
 	// Not red: red is reserved for destructive actions.
 	const SELECTED = '#1e88e5';
+	// Pins are large enough for the pictogram to be recognisable.
+	const PIN_SCALE = 1.3;
+	const SELECTED_SCALE = 1.7;
 
 	let container: HTMLDivElement;
 	let map: MapLibreMap | undefined;
@@ -112,14 +116,71 @@
 					id: m.id!,
 					label: label(m),
 					time: new Date(m.createdAt).toLocaleString(),
-					voice: !!m.audio
+					pin: pinKey(m)
 				}
 			}));
 		return { type: 'FeatureCollection' as const, features };
 	}
 
-	/** A map pin (teardrop with a dot) whose tip is at the bottom centre of the image. */
-	function pinImage(color: string, scale: number, outline: string) {
+	/** Which pin image a marker uses; the same key means the same pictogram. */
+	function pinKey(m: Marker): string {
+		if (m.audio) return 'voice';
+		if (m.tags.traffic_sign === 'maxspeed' && m.tags.maxspeed) return `speed-${m.tags.maxspeed}`;
+		return roadsideFeatureOf(m.tags)?.id ?? 'tagged';
+	}
+
+	/** The marker's pictogram (as shown on its button) rendered to an image; undefined if it has none. */
+	async function glyphImage(marker: Marker): Promise<HTMLImageElement | undefined> {
+		const box = document.createElement('div');
+		const component = mount(MarkerIcon, { target: box, props: { marker } });
+		flushSync();
+		const svg = box.querySelector('svg');
+		let xml: string | undefined;
+		if (svg) {
+			svg.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+			svg.setAttribute('width', '96');
+			svg.setAttribute('height', '96');
+			xml = new XMLSerializer().serializeToString(svg).replaceAll('currentColor', '#111111');
+		}
+		unmount(component);
+		if (!xml) return undefined;
+		const img = new Image();
+		img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(xml);
+		try {
+			await img.decode();
+			return img;
+		} catch {
+			return undefined;
+		}
+	}
+
+	/** Adds the pin images (normal and selected) for markers whose pictogram has none yet. */
+	async function ensurePins(m: MapLibreMap, items: Marker[]) {
+		const todo = new Map<string, Marker>();
+		for (const item of items) {
+			const key = pinKey(item);
+			if (!todo.has(key) && !m.hasImage(`pin-${key}`)) todo.set(key, item);
+		}
+		for (const [key, item] of todo) {
+			const glyph = await glyphImage(item);
+			const color = key === 'voice' ? VOICE : TAGGED;
+			const round = key.startsWith('speed-');
+			const pin = pinImage(color, PIN_SCALE, '#111111', glyph, round);
+			const sel = pinImage(SELECTED, SELECTED_SCALE, '#ffffff', glyph, round);
+			if (m.hasImage(`pin-${key}`)) continue;
+			m.addImage(`pin-${key}`, pin.image, { pixelRatio: pin.pixelRatio });
+			m.addImage(`pin-sel-${key}`, sel.image, { pixelRatio: sel.pixelRatio });
+		}
+	}
+
+	/** A map pin (teardrop with a pictogram) whose tip is at the bottom centre of the image. */
+	function pinImage(
+		color: string,
+		scale: number,
+		outline: string,
+		glyph?: HTMLImageElement,
+		round = false
+	) {
 		const w = Math.round(30 * scale);
 		const h = Math.round(40 * scale);
 		const ratio = 2;
@@ -142,9 +203,14 @@
 		ctx.strokeStyle = outline;
 		ctx.stroke();
 		ctx.beginPath();
-		ctx.arc(cx, cy, r * 0.38, 0, Math.PI * 2);
+		ctx.arc(cx, cy, r * (glyph ? 0.8 : 0.38), 0, Math.PI * 2);
 		ctx.fillStyle = '#ffffff';
 		ctx.fill();
+		if (glyph) {
+			// A round sign fills the disc edge to edge; a rectangular one must fit inside it.
+			const side = r * (round ? 1.65 : 1.4);
+			ctx.drawImage(glyph, cx - side / 2, cy - side / 2, side, side);
+		}
 		return { image: ctx.getImageData(0, 0, canvas.width, canvas.height), pixelRatio: ratio };
 	}
 
@@ -155,9 +221,10 @@
 		source?.setData(feature ? { type: 'FeatureCollection', features: [feature] } : EMPTY);
 	}
 
-	function refresh() {
+	async function refresh() {
 		const data = collection(markers);
 		count = data.features.length;
+		if (map) await ensurePins(map, markers);
 		(map?.getSource(SOURCE) as GeoJSONSource | undefined)?.setData(data);
 		setSelected(selectedId);
 	}
@@ -229,16 +296,9 @@
 				'top-right'
 			);
 
-			m.on('load', () => {
-				for (const [name, color] of [
-					['pin-voice', VOICE],
-					['pin-tagged', TAGGED]
-				]) {
-					const { image, pixelRatio } = pinImage(color, 1, '#111111');
-					m.addImage(name, image, { pixelRatio });
-				}
-				const sel = pinImage(SELECTED, 1.4, '#ffffff');
-				m.addImage('pin-selected', sel.image, { pixelRatio: sel.pixelRatio });
+			m.on('load', async () => {
+				await ensurePins(m, markers);
+				if (disposed) return;
 
 				m.addSource(SOURCE, { type: 'geojson', data });
 				m.addSource(SELECTED_SOURCE, { type: 'geojson', data: EMPTY });
@@ -247,7 +307,7 @@
 					type: 'symbol',
 					source: SOURCE,
 					layout: {
-						'icon-image': ['case', ['get', 'voice'], 'pin-voice', 'pin-tagged'],
+						'icon-image': ['concat', 'pin-', ['get', 'pin']],
 						'icon-anchor': 'bottom',
 						'icon-allow-overlap': true
 					}
@@ -258,7 +318,7 @@
 					type: 'symbol',
 					source: SELECTED_SOURCE,
 					layout: {
-						'icon-image': 'pin-selected',
+						'icon-image': ['concat', 'pin-sel-', ['get', 'pin']],
 						'icon-anchor': 'bottom',
 						'icon-allow-overlap': true
 					}
@@ -333,7 +393,7 @@
 				}
 				header.append(text);
 				body.append(header, actions);
-				const p = new maplibre.Popup({ offset: [0, -34], className: 'cairn-popup-root' })
+				const p = new maplibre.Popup({ offset: [0, -44], className: 'cairn-popup-root' })
 					.setLngLat([lon, lat])
 					.setDOMContent(body)
 					.addTo(m);
