@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { playSuccess, unlockAudio } from '../../lib/audio';
+	import { basemaps } from '../../lib/basemaps';
 	import { categories } from '../../lib/categories';
 	import { saveSettings, settings } from '../../lib/settings.svelte';
 
@@ -67,15 +68,27 @@
 	</fieldset>
 
 	<fieldset class={fieldset}>
+		<legend>Map</legend>
+		<label class={label}>
+			<span>
+				Background
+				<small class={hint}>The map style shown on the Map screen.</small>
+			</span>
+			<select class={select} bind:value={settings.basemap} onchange={saveSettings}>
+				{#each basemaps as b (b.id)}
+					<option value={b.id}>{b.label}</option>
+				{/each}
+			</select>
+		</label>
+	</fieldset>
+
+	<fieldset class={fieldset}>
 		<legend>Feedback</legend>
 		<label class={label}>
 			<input class={field} type="checkbox" bind:checked={settings.sound} onchange={saveSettings} />
 			<span>Sound when a marker is saved</span>
 		</label>
-		<button
-			class="self-start rounded-lg border-0 bg-raised px-4 py-2 text-ink"
-			onclick={testSound}
-		>
+		<button class="self-start rounded-lg border-0 bg-raised px-4 py-2 text-ink" onclick={testSound}>
 			Test sound
 		</button>
 	</fieldset>

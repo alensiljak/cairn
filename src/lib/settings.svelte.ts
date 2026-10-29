@@ -1,3 +1,5 @@
+import { DEFAULT_BASEMAP } from './basemaps';
+
 export type GpsMode = 'continuous' | 'on-demand';
 
 export interface Settings {
@@ -9,6 +11,8 @@ export interface Settings {
 	sound: boolean;
 	/** Length of a voice note; recording stops by itself after this many seconds. */
 	voiceSeconds: number;
+	/** Background map (see basemaps.ts). */
+	basemap: string;
 }
 
 const KEY = 'cairn.settings';
@@ -16,7 +20,8 @@ const defaults: Settings = {
 	defaultCategory: 'speed-limits',
 	gpsMode: 'continuous',
 	sound: true,
-	voiceSeconds: 10
+	voiceSeconds: 10,
+	basemap: DEFAULT_BASEMAP
 };
 
 function load(): Settings {

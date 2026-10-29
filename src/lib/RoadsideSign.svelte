@@ -48,7 +48,16 @@
 			<circle cx="50" cy="74" r="9" fill="#43a047" />
 		{:else if kind === 'speed-camera'}
 			<!-- Roadside enforcement cabinet: tall box with a window for the camera. -->
-			<rect x="30" y="8" width="40" height="84" rx="5" fill="#cfd2d6" stroke="#111" stroke-width="3" />
+			<rect
+				x="30"
+				y="8"
+				width="40"
+				height="84"
+				rx="5"
+				fill="#cfd2d6"
+				stroke="#111"
+				stroke-width="3"
+			/>
 			<rect x="37" y="17" width="26" height="22" rx="3" fill="#111" />
 			<circle cx="50" cy="28" r="6" fill="#4aa3ff" />
 			<circle cx="49" cy="26.5" r="1.8" fill="#fff" />

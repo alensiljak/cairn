@@ -2,12 +2,11 @@
 	import { onDestroy, onMount } from 'svelte';
 	import type { Map as MapLibreMap, Popup } from 'maplibre-gl';
 	import 'maplibre-gl/dist/maplibre-gl.css';
+	import { getBasemap } from '../../lib/basemaps';
+	import { settings } from '../../lib/settings.svelte';
 	import { listMarkers, toFeature, type Marker } from '../../lib/markers';
 
 	const SOURCE = 'markers';
-	// Online-only for now. The OSM tile servers are for light use (see their tile usage policy);
-	// switch to a dedicated tile provider before wide distribution.
-	const TILES = 'https://tile.openstreetmap.org/{z}/{x}/{y}.png';
 
 	let container: HTMLDivElement;
 	let map: MapLibreMap | undefined;
@@ -55,20 +54,7 @@
 
 			const m = new maplibre.Map({
 				container,
-				style: {
-					version: 8,
-					sources: {
-						osm: {
-							type: 'raster',
-							tiles: [TILES],
-							tileSize: 256,
-							maxzoom: 19,
-							attribution:
-								'© <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noreferrer">OpenStreetMap</a> contributors'
-						}
-					},
-					layers: [{ id: 'osm', type: 'raster', source: 'osm' }]
-				},
+				style: getBasemap(settings.basemap).style,
 				center: [0, 20],
 				zoom: 1.5,
 				attributionControl: { compact: true }

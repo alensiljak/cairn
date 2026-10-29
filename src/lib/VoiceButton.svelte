@@ -17,7 +17,8 @@
 	aria-label="Voice note"
 >
 	<Mic />
-	{#if voice.phase === 'recording'}<span class="font-bold tabular-nums">{voice.remaining}</span>{/if}
+	{#if voice.phase === 'recording'}<span class="font-bold tabular-nums">{voice.remaining}</span
+		>{/if}
 </button>
 
 {#if voice.message && !sheetOpen}
