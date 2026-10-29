@@ -44,6 +44,7 @@
 		<a
 			class={item}
 			href={resolve(c.path)}
+			data-sveltekit-replacestate
 			onclick={close}
 			aria-current={page.url.pathname === c.path ? 'page' : undefined}
 		>

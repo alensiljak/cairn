@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { tick } from 'svelte';
 	import { fly } from 'svelte/transition';
-	import { goto } from '$app/navigation';
+	import { afterNavigate, goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
 	import { page } from '$app/state';
 	import ChevronLeft from '@lucide/svelte/icons/chevron-left';
@@ -22,6 +22,19 @@
 	const category = $derived(categories.find((c) => c.path === page.url.pathname));
 	const canSwipe = $derived(category !== undefined && categories.length > 1);
 
+	// Whether the current page was reached from another page of the app (so history.back() stays in it).
+	let canGoBack = false;
+	afterNavigate((nav) => {
+		canGoBack = nav.type !== 'enter' && nav.from !== null;
+	});
+
+	/** Header back button: pop the page off the history, or replace it with home if opened directly. */
+	function goBack(e: MouseEvent) {
+		e.preventDefault();
+		if (canGoBack) history.back();
+		else void goto(resolve('/'), { replaceState: true });
+	}
+
 	// Slide direction of the navigation in progress: 1 = next (new page enters from the right),
 	// -1 = previous, 0 = not a swipe (no animation).
 	let slide = $state<1 | -1 | 0>(0);
@@ -38,7 +51,8 @@
 		const next = categories[(i + step + categories.length) % categories.length];
 		slide = step;
 		try {
-			await goto(resolve(next.path));
+			// Replace, so swiping between categories leaves no history entries.
+			await goto(resolve(next.path), { replaceState: true });
 			await tick();
 		} finally {
 			slide = 0;
@@ -124,7 +138,7 @@
 				<Menu />
 			</button>
 		{:else}
-			<a class={headerButton} href={resolve('/')} aria-label="Back"><ChevronLeft /></a>
+			<a class={headerButton} href={resolve('/')} onclick={goBack} aria-label="Back"><ChevronLeft /></a>
 		{/if}
 		<h1 class="m-0 flex-1 text-[1.1rem]">{title}</h1>
 		{#if category}
