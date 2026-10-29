@@ -13,7 +13,17 @@ export function getAudioContext() {
 	return ctx;
 }
 
-function tone(freq: number, start: number, duration: number, type: OscillatorType = 'sine') {
+/**
+ * One tone. By default it fades out over its whole length (a soft ping). `body` (0..1) makes it
+ * fuller: the level falls only to that fraction of `peak` by 60% of the length, then releases.
+ */
+function tone(
+	freq: number,
+	start: number,
+	duration: number,
+	type: OscillatorType = 'sine',
+	{ peak = 0.5, body = 0 } = {}
+) {
 	if (!ctx) return;
 	const t = ctx.currentTime + start;
 	const osc = ctx.createOscillator();
@@ -21,7 +31,8 @@ function tone(freq: number, start: number, duration: number, type: OscillatorTyp
 	osc.type = type;
 	osc.frequency.value = freq;
 	gain.gain.setValueAtTime(0.0001, t);
-	gain.gain.exponentialRampToValueAtTime(0.5, t + 0.01);
+	gain.gain.exponentialRampToValueAtTime(peak, t + 0.01);
+	if (body > 0) gain.gain.exponentialRampToValueAtTime(peak * body, t + duration * 0.6);
 	gain.gain.exponentialRampToValueAtTime(0.0001, t + duration);
 	osc.connect(gain).connect(ctx.destination);
 	osc.start(t);
@@ -41,8 +52,9 @@ export function playRecordStart() {
 
 /** Two falling tones: recording ended (the start beep is a single tone). */
 export function playRecordStop() {
-	tone(1300, 0, 0.14);
-	tone(650, 0.18, 0.2);
+	const full = { peak: 0.45, body: 0.5 };
+	tone(1200, 0, 0.17, 'sine', full);
+	tone(650, 0.13, 0.2, 'sine', full);
 }
 
 /** One low buzz: not saved. */

@@ -7,13 +7,17 @@
 </script>
 
 <button
-	class:recording={voice.phase === 'recording'}
-	class:starting={voice.phase === 'starting'}
+	class="flex min-w-10 items-center justify-center gap-1 rounded-lg border-0 p-2 {voice.phase ===
+	'recording'
+		? 'bg-stop text-white motion-safe:animate-pulse'
+		: voice.phase === 'starting'
+			? 'bg-caution-dark text-ink'
+			: 'bg-raised text-ink'}"
 	{onclick}
 	aria-label="Voice note"
 >
 	<Mic />
-	{#if voice.phase === 'recording'}<span>{voice.remaining}</span>{/if}
+	{#if voice.phase === 'recording'}<span class="font-bold tabular-nums">{voice.remaining}</span>{/if}
 </button>
 
 {#if voice.message && !sheetOpen}
@@ -26,41 +30,3 @@
 		{voice.message}
 	</p>
 {/if}
-
-<style>
-	button {
-		display: flex;
-		align-items: center;
-		gap: 0.25rem;
-		border: 0;
-		border-radius: 0.5rem;
-		padding: 0.5rem;
-		min-width: 2.5rem;
-		justify-content: center;
-		background: var(--color-raised);
-		color: var(--color-ink);
-	}
-
-	button.starting {
-		background: var(--color-caution-dark);
-	}
-
-	button.recording {
-		background: var(--color-stop);
-		color: #fff;
-		animation: pulse 1s infinite;
-	}
-
-	span {
-		font-variant-numeric: tabular-nums;
-		font-weight: bold;
-	}
-
-	@media (prefers-reduced-motion: no-preference) {
-		@keyframes pulse {
-			50% {
-				opacity: 0.6;
-			}
-		}
-	}
-</style>

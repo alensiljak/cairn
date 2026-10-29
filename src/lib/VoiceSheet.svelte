@@ -38,7 +38,7 @@
 
 {#if open}
 	<div
-		class="sheet"
+		class="absolute inset-0 z-5 flex touch-none flex-col items-center justify-center gap-8 bg-night p-4 landscape:flex-row landscape:gap-12"
 		role="dialog"
 		aria-label="Voice note"
 		tabindex="-1"
@@ -46,145 +46,52 @@
 		ontouchend={onTouchEnd}
 		transition:fly={{ y: -400, duration }}
 	>
-		<button class="close" onclick={() => (open = false)} aria-label="Close"><X /></button>
+		<button
+			class="absolute top-2 right-2 flex rounded-lg border-0 bg-raised p-2 text-ink"
+			onclick={() => (open = false)}
+			aria-label="Close"
+		>
+			<X />
+		</button>
 
-		<div class="levels" aria-hidden="true">
+		<!-- Scrolling level history: silence shows as a row of dots, speech as rising bars. -->
+		<div
+			class="flex h-[min(20dvh,8rem)] w-[min(90%,28rem)] items-center justify-center gap-[0.3rem] landscape:h-1/2 landscape:w-2/5"
+			aria-hidden="true"
+		>
 			{#each voice.levels as level, i (i)}
-				<span style:height="{Math.max(level * 100, 0)}%"></span>
+				<span
+					class="max-w-[0.6rem] min-h-[0.35rem] flex-1 rounded-full bg-go transition-[height] duration-75 ease-linear"
+					style:height="{Math.max(level * 100, 0)}%"
+				></span>
 			{/each}
 		</div>
 
 		<button
-			class="record"
-			class:recording
-			class:starting={voice.phase === 'starting'}
+			class="flex size-[min(60vw,40dvh)] flex-col items-center justify-center rounded-full border-[0.3rem] [-webkit-tap-highlight-color:transparent] {recording
+				? 'border-stop bg-stop-dark text-white'
+				: voice.phase === 'starting'
+					? 'border-caution bg-caution-dark text-ink'
+					: 'border-edge bg-raised text-ink active:bg-tile-active'}"
 			onclick={tap}
 			aria-label={recording ? 'Stop voice note' : 'Record voice note'}
 		>
 			{#if recording}
-				<span class="count">{voice.remaining}</span>
+				<span class="text-[4rem] leading-none font-bold tabular-nums">{voice.remaining}</span>
 				<small>tap to stop</small>
 			{:else}
 				<Mic size={96} />
 			{/if}
 		</button>
 
-		<p class="hint" class:ok={voice.message && voice.ok} class:error={voice.message && !voice.ok}>
+		<p
+			class="m-0 text-center landscape:absolute landscape:bottom-2 {voice.message
+				? voice.ok
+					? 'text-go'
+					: 'text-stop'
+				: 'text-muted'}"
+		>
 			{voice.message || (recording ? 'Speak now' : 'Tap to record · swipe up to close')}
 		</p>
 	</div>
 {/if}
-
-<style>
-	.sheet {
-		position: absolute;
-		inset: 0;
-		z-index: 5;
-		display: flex;
-		flex-direction: column;
-		align-items: center;
-		justify-content: center;
-		gap: 2rem;
-		padding: 1rem;
-		background: #111;
-		touch-action: none;
-	}
-
-	.close {
-		position: absolute;
-		top: 0.5rem;
-		right: 0.5rem;
-		display: flex;
-		border: 0;
-		border-radius: 0.5rem;
-		padding: 0.5rem;
-		background: #2c2c2c;
-		color: #eee;
-	}
-
-	/* Scrolling level history: silence shows as a row of dots, speech as rising bars. */
-	.levels {
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		gap: 0.3rem;
-		width: min(90%, 28rem);
-		height: min(20dvh, 8rem);
-	}
-
-	.levels span {
-		flex: 1;
-		min-height: 0.35rem;
-		max-width: 0.6rem;
-		border-radius: 1rem;
-		background: var(--color-go);
-		transition: height 0.07s linear;
-	}
-
-	.record {
-		display: flex;
-		flex-direction: column;
-		align-items: center;
-		justify-content: center;
-		width: min(60vw, 40dvh);
-		height: min(60vw, 40dvh);
-		border: 0.3rem solid #444;
-		border-radius: 50%;
-		background: #2c2c2c;
-		color: #eee;
-		-webkit-tap-highlight-color: transparent;
-	}
-
-	.record:active {
-		background: #3a3a3a;
-	}
-
-	.record.starting {
-		background: var(--color-caution-dark);
-		border-color: var(--color-caution);
-	}
-
-	.record.recording {
-		background: var(--color-stop-dark);
-		border-color: var(--color-stop);
-		color: #fff;
-	}
-
-	.count {
-		font-size: 4rem;
-		font-weight: bold;
-		font-variant-numeric: tabular-nums;
-		line-height: 1;
-	}
-
-	.hint {
-		margin: 0;
-		color: #999;
-		text-align: center;
-	}
-
-	.hint.ok {
-		color: var(--color-go);
-	}
-
-	.hint.error {
-		color: var(--color-stop);
-	}
-
-	@media (orientation: landscape) {
-		.sheet {
-			flex-direction: row;
-			gap: 3rem;
-		}
-
-		.levels {
-			width: 40%;
-			height: 50%;
-		}
-
-		.hint {
-			position: absolute;
-			bottom: 0.5rem;
-		}
-	}
-</style>
