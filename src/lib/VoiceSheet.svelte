@@ -38,7 +38,7 @@
 
 {#if open}
 	<div
-		class="absolute inset-0 z-5 flex touch-none flex-col items-center justify-center gap-8 bg-night p-4 landscape:flex-row landscape:gap-12"
+		class="absolute inset-0 z-5 grid touch-none grid-rows-[1fr_auto_1fr] place-items-center gap-8 bg-night p-4 landscape:grid-cols-[1fr_auto_1fr] landscape:grid-rows-1 landscape:gap-12"
 		role="dialog"
 		aria-label="Voice note"
 		tabindex="-1"
@@ -56,7 +56,7 @@
 
 		<!-- Scrolling level history: silence shows as a row of dots, speech as rising bars. -->
 		<div
-			class="flex h-[min(20dvh,8rem)] w-[min(90%,28rem)] items-center justify-center gap-[0.3rem] landscape:h-1/2 landscape:w-2/5"
+			class="flex h-[min(20dvh,8rem)] w-[min(90%,28rem)] items-center justify-center gap-[0.3rem] self-end landscape:h-1/2 landscape:w-[90%] landscape:self-center"
 			aria-hidden="true"
 		>
 			{#each voice.levels as level, i (i)}
@@ -68,7 +68,7 @@
 		</div>
 
 		<button
-			class="flex size-[min(60vw,40dvh)] flex-col items-center justify-center rounded-full border-[0.3rem] [-webkit-tap-highlight-color:transparent] {recording
+			class="flex size-[min(66vw,44dvh)] flex-col items-center justify-center rounded-full border-[0.3rem] [-webkit-tap-highlight-color:transparent] {recording
 				? 'border-stop bg-stop-dark text-white'
 				: voice.phase === 'starting'
 					? 'border-caution bg-caution-dark text-ink'
@@ -80,12 +80,12 @@
 				<span class="text-[4rem] leading-none font-bold tabular-nums">{voice.remaining}</span>
 				<small>tap to stop</small>
 			{:else}
-				<Mic size={96} />
+				<Mic size={108} />
 			{/if}
 		</button>
 
 		<p
-			class="m-0 text-center landscape:absolute landscape:bottom-2 {voice.message
+			class="m-0 self-start text-center landscape:absolute landscape:bottom-2 {voice.message
 				? voice.ok
 					? 'text-go'
 					: 'text-stop'
