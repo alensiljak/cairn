@@ -8,8 +8,8 @@ Cairn is a tool to help map roadside features in OpenStreetMap. It is designed t
 
 ## Planned Features
 
-- quick entry
-- 6 buttons per screen
+- ✅ quick entry
+- ✅ 6 buttons per screen
 - categories: speed limits, amenity, parking, petrol station, charger...
 - swipe left-right for more options, up-down for the next category
 - export to a file or upload to OSM directly
@@ -29,16 +29,15 @@ Cairn is a tool to help map roadside features in OpenStreetMap. It is designed t
 
 ## Development
 
+Setup.
+Infrastructure frameworks are maintained using `mise`, so set that up first.
+
 ```sh
+mise install
 npm install
+
 npm run dev
 ```
-
-## License
-
-Copyright (C) Alen Šiljak
-
-Waymarq is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version. See [LICENSE](LICENSE).
 
 ## Deployment
 
@@ -47,3 +46,9 @@ Hosted as static assets on Cloudflare (config in `wrangler.jsonc`). First run `n
 ```sh
 npm run deploy
 ```
+
+## License
+
+Copyright (C) Alen Šiljak
+
+Waymarq is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version. See [LICENSE](LICENSE).

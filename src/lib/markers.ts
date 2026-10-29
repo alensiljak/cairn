@@ -1,0 +1,92 @@
+// Marker storage in IndexedDB.
+//
+// Coordinates are flat numeric fields (lon/lat, WGS84) rather than nested in the payload:
+// they can be indexed and converted to GeoJSON (see `toFeature`) for MapLibre without parsing.
+// What was mapped is stored as real OSM tags (e.g. traffic_sign=maxspeed, maxspeed=50), so
+// export/upload needs no translation and new categories need no schema change.
+
+export interface Marker {
+	id?: number;
+	/** OSM tags of the node to create. */
+	tags: Record<string, string>;
+	lon: number;
+	lat: number;
+	/** Horizontal accuracy in metres. */
+	accuracy: number | null;
+	/** Direction of travel in degrees from north. */
+	heading: number | null;
+	/** Device speed in m/s. */
+	speed: number | null;
+	/** Epoch milliseconds. */
+	createdAt: number;
+}
+
+export type NewMarker = Omit<Marker, 'id' | 'createdAt'>;
+
+const DB_NAME = 'cairn';
+const STORE = 'markers';
+
+let dbPromise: Promise<IDBDatabase> | undefined;
+
+function openDb(): Promise<IDBDatabase> {
+	dbPromise ??= new Promise((resolve, reject) => {
+		const req = indexedDB.open(DB_NAME, 2);
+		req.onupgradeneeded = (event) => {
+			const db = req.result;
+			const tx = req.transaction!;
+			if (event.oldVersion < 1) {
+				const store = db.createObjectStore(STORE, { keyPath: 'id', autoIncrement: true });
+				store.createIndex('createdAt', 'createdAt');
+			}
+			if (event.oldVersion === 1) {
+				// v1 stored { type, value }; v2 stores OSM tags.
+				const store = tx.objectStore(STORE);
+				store.deleteIndex('type');
+				store.openCursor().onsuccess = (e) => {
+					const cursor = (e.target as IDBRequest<IDBCursorWithValue | null>).result;
+					if (!cursor) return;
+					const { type, value, ...rest } = cursor.value;
+					cursor.update({ ...rest, tags: { traffic_sign: type, [type]: value } });
+					cursor.continue();
+				};
+			}
+		};
+		req.onsuccess = () => resolve(req.result);
+		req.onerror = () => reject(req.error);
+	});
+	return dbPromise;
+}
+
+function request<T>(req: IDBRequest<T>): Promise<T> {
+	return new Promise((resolve, reject) => {
+		req.onsuccess = () => resolve(req.result);
+		req.onerror = () => reject(req.error);
+	});
+}
+
+export async function addMarker(marker: NewMarker): Promise<number> {
+	const db = await openDb();
+	const store = db.transaction(STORE, 'readwrite').objectStore(STORE);
+	return (await request(store.add({ ...marker, createdAt: Date.now() }))) as number;
+}
+
+/** All markers, newest first. */
+export async function listMarkers(): Promise<Marker[]> {
+	const db = await openDb();
+	const all = await request(db.transaction(STORE).objectStore(STORE).getAll());
+	return (all as Marker[]).sort((a, b) => b.createdAt - a.createdAt);
+}
+
+export async function deleteMarker(id: number): Promise<void> {
+	const db = await openDb();
+	await request(db.transaction(STORE, 'readwrite').objectStore(STORE).delete(id));
+}
+
+/** GeoJSON Point feature (note: GeoJSON order is [lon, lat]). */
+export function toFeature(m: Marker) {
+	return {
+		type: 'Feature' as const,
+		geometry: { type: 'Point' as const, coordinates: [m.lon, m.lat] },
+		properties: { ...m.tags }
+	};
+}
