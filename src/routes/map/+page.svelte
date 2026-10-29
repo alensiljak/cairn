@@ -1,5 +1,6 @@
 <script lang="ts">
-	import { onDestroy, onMount } from 'svelte';
+	import { mount, onDestroy, onMount, unmount } from 'svelte';
+	import MarkerIcon from '../../lib/MarkerIcon.svelte';
 	import type {
 		GeoJSONSource,
 		Map as MapLibreMap,
@@ -317,13 +318,28 @@
 					actions.append(play);
 				}
 				actions.append(move, remove);
-				body.append(title, time, actions);
+				const text = document.createElement('div');
+				text.className = 'cairn-popup-text';
+				text.append(title, time);
+				const header = document.createElement('div');
+				header.className = 'cairn-popup-header';
+				const marker = markers.find((x) => x.id === id);
+				let icon: ReturnType<typeof mount> | undefined;
+				if (marker) {
+					const iconBox = document.createElement('div');
+					iconBox.className = 'cairn-popup-icon';
+					icon = mount(MarkerIcon, { target: iconBox, props: { marker } });
+					header.append(iconBox);
+				}
+				header.append(text);
+				body.append(header, actions);
 				const p = new maplibre.Popup({ offset: [0, -34], className: 'cairn-popup-root' })
 					.setLngLat([lon, lat])
 					.setDOMContent(body)
 					.addTo(m);
 				p.on('close', () => {
 					stopPlayback();
+					if (icon) unmount(icon);
 					if (popup === p && moving === undefined) setSelected(undefined);
 				});
 				popup = p;
@@ -507,6 +523,21 @@
 		gap: 4px;
 		min-width: 9rem;
 		padding-right: 12px;
+	}
+	:global(.cairn-popup-header) {
+		display: flex;
+		align-items: center;
+		gap: 12px;
+	}
+	:global(.cairn-popup-icon) {
+		width: 40px;
+		height: 40px;
+		flex-shrink: 0;
+	}
+	:global(.cairn-popup-text) {
+		display: flex;
+		flex-direction: column;
+		gap: 4px;
 	}
 	:global(.cairn-popup-time) {
 		color: #666666;

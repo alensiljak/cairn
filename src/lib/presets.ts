@@ -57,6 +57,16 @@ export const roadsideFeatures = [
 	}
 ] as const;
 
+/** The roadside feature a marker's tags were generated from, ignoring `direction`. */
+export function roadsideFeatureOf(tags: Record<string, string>) {
+	const { direction: _direction, ...rest } = tags;
+	return roadsideFeatures.find((f) => {
+		const expected: Record<string, string> = f.tags(null);
+		const keys = Object.keys(expected);
+		return keys.length === Object.keys(rest).length && keys.every((k) => rest[k] === expected[k]);
+	});
+}
+
 // Planned categories:
 //   petrol station  amenity=fuel
 //   parking         amenity=parking

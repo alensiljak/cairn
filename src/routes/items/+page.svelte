@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { onDestroy, onMount } from 'svelte';
 	import { confirmDialog } from '../../lib/confirm.svelte';
+	import MarkerIcon from '../../lib/MarkerIcon.svelte';
 	import { deleteMarker, listMarkers, type Marker } from '../../lib/markers';
 
 	let markers = $state<Marker[]>([]);
@@ -36,6 +37,7 @@
 <ul class="m-0 list-none px-4 py-2">
 	{#each markers as m (m.id)}
 		<li class="flex items-center gap-4 border-b border-raised py-3">
+			<div class="h-10 w-10 shrink-0 text-ink"><MarkerIcon marker={m} /></div>
 			<div class="flex flex-1 flex-col text-[0.85rem] text-muted">
 				<strong class="text-base text-ink"
 					>{m.audio
