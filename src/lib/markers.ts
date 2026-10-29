@@ -9,14 +9,17 @@ export interface Marker {
 	id?: number;
 	/** OSM tags of the node to create. */
 	tags: Record<string, string>;
-	lon: number;
-	lat: number;
+	/** Null for a voice note recorded without a position fix. */
+	lon: number | null;
+	lat: number | null;
 	/** Horizontal accuracy in metres. */
 	accuracy: number | null;
 	/** Direction of travel in degrees from north. */
 	heading: number | null;
 	/** Device speed in m/s. */
 	speed: number | null;
+	/** Voice note recording, to be transcribed into a `note` tag later. Not part of the OSM data. */
+	audio?: Blob;
 	/** Epoch milliseconds. */
 	createdAt: number;
 }
@@ -82,11 +85,14 @@ export async function deleteMarker(id: number): Promise<void> {
 	await request(db.transaction(STORE, 'readwrite').objectStore(STORE).delete(id));
 }
 
-/** GeoJSON Point feature (note: GeoJSON order is [lon, lat]). */
+/** GeoJSON Point feature (note: GeoJSON order is [lon, lat]); null geometry without a position. */
 export function toFeature(m: Marker) {
 	return {
 		type: 'Feature' as const,
-		geometry: { type: 'Point' as const, coordinates: [m.lon, m.lat] },
+		geometry:
+			m.lon !== null && m.lat !== null
+				? { type: 'Point' as const, coordinates: [m.lon, m.lat] }
+				: null,
 		properties: { ...m.tags }
 	};
 }

@@ -29,6 +29,17 @@ export function playSuccess() {
 	tone(1320, 0.12, 0.16);
 }
 
+/** One mid beep: recording starts now. */
+export function playRecordStart() {
+	tone(1000, 0, 0.15);
+}
+
+/** Two short low beeps: recording ended. */
+export function playRecordStop() {
+	tone(660, 0, 0.08);
+	tone(660, 0.12, 0.08);
+}
+
 /** One low buzz: not saved. */
 export function playError() {
 	tone(180, 0, 0.4, 'sawtooth');

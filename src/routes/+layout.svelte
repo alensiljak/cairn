@@ -9,6 +9,7 @@
 	import List from '@lucide/svelte/icons/list';
 	import Menu from '@lucide/svelte/icons/menu';
 	import Sidebar from '../lib/Sidebar.svelte';
+	import VoiceButton from '../lib/VoiceButton.svelte';
 	import { categories } from '../lib/categories';
 
 	let { children } = $props();
@@ -103,6 +104,7 @@
 		{/if}
 		<h1>{title}</h1>
 		{#if category}
+			<VoiceButton />
 			<a href={resolve('/items')} aria-label="Items"><List /></a>
 		{/if}
 	</header>

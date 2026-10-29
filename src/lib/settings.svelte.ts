@@ -7,10 +7,17 @@ export interface Settings {
 	gpsMode: GpsMode;
 	/** Play a sound when a marker is saved (or fails). */
 	sound: boolean;
+	/** Length of a voice note; recording stops by itself after this many seconds. */
+	voiceSeconds: number;
 }
 
 const KEY = 'cairn.settings';
-const defaults: Settings = { defaultCategory: 'speed-limits', gpsMode: 'continuous', sound: true };
+const defaults: Settings = {
+	defaultCategory: 'speed-limits',
+	gpsMode: 'continuous',
+	sound: true,
+	voiceSeconds: 10
+};
 
 function load(): Settings {
 	try {

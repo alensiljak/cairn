@@ -1,14 +1,26 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
+	import { onDestroy, onMount } from 'svelte';
 	import { deleteMarker, listMarkers, type Marker } from '../../lib/markers';
 
 	let markers = $state<Marker[]>([]);
 	let loaded = $state(false);
+	// Object URLs for voice note playback.
+	let audioUrls = new Map<number, string>();
+
+	function revokeUrls() {
+		audioUrls.forEach((url) => URL.revokeObjectURL(url));
+		audioUrls.clear();
+	}
 
 	async function refresh() {
-		markers = await listMarkers();
+		const list = await listMarkers();
+		revokeUrls();
+		for (const m of list) if (m.audio) audioUrls.set(m.id!, URL.createObjectURL(m.audio));
+		markers = list;
 		loaded = true;
 	}
+
+	onDestroy(revokeUrls);
 
 	async function remove(id: number) {
 		await deleteMarker(id);
@@ -23,12 +35,21 @@
 		<li>
 			<div class="info">
 				<strong
-					>{Object.entries(m.tags)
-						.map(([k, v]) => `${k}=${v}`)
-						.join(' ')}</strong
+					>{m.audio
+						? 'Voice note'
+						: Object.entries(m.tags)
+								.map(([k, v]) => `${k}=${v}`)
+								.join(' ')}</strong
 				>
-				<span>{m.lat.toFixed(5)}, {m.lon.toFixed(5)}</span>
+				<span>
+					{m.lat !== null && m.lon !== null
+						? `${m.lat.toFixed(5)}, ${m.lon.toFixed(5)}`
+						: 'No position'}
+				</span>
 				<span>{new Date(m.createdAt).toLocaleString()}</span>
+				{#if m.audio}
+					<audio controls preload="none" src={audioUrls.get(m.id!)}></audio>
+				{/if}
 			</div>
 			<button onclick={() => remove(m.id!)} aria-label="Delete">✕</button>
 		</li>

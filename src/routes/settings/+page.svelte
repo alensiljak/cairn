@@ -59,6 +59,21 @@
 		</label>
 		<button onclick={testSound}>Test sound</button>
 	</fieldset>
+
+	<fieldset>
+		<legend>Voice notes</legend>
+		<label>
+			<span>
+				Note length
+				<small>Recording stops by itself after this long; tap the microphone to end sooner.</small>
+			</span>
+			<select bind:value={settings.voiceSeconds} onchange={saveSettings}>
+				{#each [5, 10, 20, 30] as s (s)}
+					<option value={s}>{s} s</option>
+				{/each}
+			</select>
+		</label>
+	</fieldset>
 </div>
 
 <style>

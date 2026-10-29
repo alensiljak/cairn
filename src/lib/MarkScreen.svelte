@@ -1,6 +1,7 @@
 <script lang="ts" generics="T extends { id: string | number; label: string }">
 	import type { Snippet } from 'svelte';
 	import { playError, playSuccess, unlockAudio } from './audio';
+	import { getFix, gps, startGps } from './gps.svelte';
 	import { addMarker } from './markers';
 	import { settings } from './settings.svelte';
 
@@ -15,47 +16,23 @@
 		sign: Snippet<[T]>;
 	} = $props();
 
-	// Latest fix from the continuous watch; unused in on-demand mode.
-	let fix: GeolocationPosition | undefined;
-	let status = $state('Waiting for GPS…');
+	// Result of the last tap; shown instead of the GPS status until the next GPS update.
+	let result = $state('');
 	let flash = $state<T['id'] | undefined>();
 	let flashTimer: ReturnType<typeof setTimeout> | undefined;
+	let resultTimer: ReturnType<typeof setTimeout> | undefined;
 
-	$effect(() => {
-		if (!('geolocation' in navigator)) {
-			status = 'Geolocation not supported';
-			return;
-		}
-		if (settings.gpsMode !== 'continuous') {
-			fix = undefined;
-			status = 'GPS on demand';
-			return;
-		}
-		status = 'Waiting for GPS…';
-		const id = navigator.geolocation.watchPosition(
-			(pos) => {
-				fix = pos;
-				status = `GPS ±${Math.round(pos.coords.accuracy)} m`;
-			},
-			(err) => {
-				status = `GPS error: ${err.message}`;
-			},
-			{ enableHighAccuracy: true, maximumAge: 2000 }
-		);
-		return () => navigator.geolocation.clearWatch(id);
+	$effect(startGps);
+
+	$effect(() => () => {
+		clearTimeout(flashTimer);
+		clearTimeout(resultTimer);
 	});
 
-	$effect(() => () => clearTimeout(flashTimer));
-
-	function getFix(): Promise<GeolocationPosition> {
-		if (fix) return Promise.resolve(fix);
-		return new Promise((resolve, reject) =>
-			navigator.geolocation.getCurrentPosition(resolve, reject, {
-				enableHighAccuracy: true,
-				maximumAge: 3000,
-				timeout: 10000
-			})
-		);
+	function show(message: string) {
+		result = message;
+		clearTimeout(resultTimer);
+		resultTimer = setTimeout(() => (result = ''), 3000);
 	}
 
 	async function mark(item: T) {
@@ -72,13 +49,13 @@
 				heading: dir,
 				speed
 			});
-			status = `Saved ${item.label} (±${Math.round(accuracy)} m)`;
+			show(`Saved ${item.label} (±${Math.round(accuracy)} m)`);
 			flash = item.id;
 			clearTimeout(flashTimer);
 			flashTimer = setTimeout(() => (flash = undefined), 600);
 			if (settings.sound) playSuccess();
 		} catch (e) {
-			status = `Not saved: ${e instanceof GeolocationPositionError ? e.message : String(e)}`;
+			show(`Not saved: ${e instanceof GeolocationPositionError ? e.message : String(e)}`);
 			if (settings.sound) playError();
 		}
 	}
@@ -94,7 +71,7 @@
 			</div>
 		{/each}
 	</div>
-	<p class="status">{status}</p>
+	<p class="status">{result || gps.status}</p>
 </div>
 
 <style>

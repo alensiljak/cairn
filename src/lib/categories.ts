@@ -1,11 +1,11 @@
 import Gauge from '@lucide/svelte/icons/gauge';
-import House from '@lucide/svelte/icons/house';
+import TrafficCone from '@lucide/svelte/icons/traffic-cone';
 
 // Each category is a route with its own one-tap screen. Add new ones here.
 // The order is the swipe order.
 export const categories = [
 	{ id: 'speed-limits', label: 'Speed limits', path: '/speed-limits', icon: Gauge },
-	{ id: 'settlements', label: 'Settlements', path: '/settlements', icon: House }
+	{ id: 'roadside', label: 'Roadside', path: '/roadside', icon: TrafficCone }
 ] as const;
 
 export type Category = (typeof categories)[number];
