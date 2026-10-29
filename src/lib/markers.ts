@@ -85,6 +85,15 @@ export async function deleteMarker(id: number): Promise<void> {
 	await request(db.transaction(STORE, 'readwrite').objectStore(STORE).delete(id));
 }
 
+/** Sets a new position; the accuracy/heading/speed of the original fix no longer apply. */
+export async function moveMarker(id: number, lon: number, lat: number): Promise<void> {
+	const db = await openDb();
+	const store = db.transaction(STORE, 'readwrite').objectStore(STORE);
+	const marker = (await request(store.get(id))) as Marker | undefined;
+	if (!marker) return;
+	await request(store.put({ ...marker, lon, lat, accuracy: null, heading: null, speed: null }));
+}
+
 /** GeoJSON Point feature (note: GeoJSON order is [lon, lat]); null geometry without a position. */
 export function toFeature(m: Marker) {
 	return {
