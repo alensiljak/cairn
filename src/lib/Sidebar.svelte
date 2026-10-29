@@ -3,6 +3,7 @@
 	import { page } from '$app/state';
 	import { categories } from './categories';
 	import Info from '@lucide/svelte/icons/info';
+	import MapIcon from '@lucide/svelte/icons/map';
 	import Settings from '@lucide/svelte/icons/settings';
 	import X from '@lucide/svelte/icons/x';
 
@@ -53,6 +54,14 @@
 
 	<hr class="my-3 h-px border-0 bg-line" />
 
+	<a
+		class={item}
+		href={resolve('/map')}
+		onclick={close}
+		aria-current={page.url.pathname === '/map' ? 'page' : undefined}
+	>
+		<MapIcon /> Map
+	</a>
 	<a
 		class={item}
 		href={resolve('/settings')}

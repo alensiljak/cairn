@@ -54,7 +54,8 @@
 	let drag = $state<{ path: string; dx: number; active: boolean } | undefined>();
 
 	function onTouchStart(e: TouchEvent) {
-		touch = e.touches.length === 1 ? { x: e.touches[0].clientX, y: e.touches[0].clientY } : undefined;
+		touch =
+			e.touches.length === 1 ? { x: e.touches[0].clientX, y: e.touches[0].clientY } : undefined;
 		vertical = false;
 	}
 
@@ -102,6 +103,7 @@
 	}
 	const titles: Record<string, string> = {
 		'/items': 'Items',
+		'/map': 'Map',
 		'/settings': 'Settings',
 		'/about': 'About'
 	};
@@ -131,14 +133,15 @@
 		{/if}
 	</header>
 	<div class="relative min-h-0 flex-1">
-		<!-- Vertical scrolling stays native, except on category pages (swipe down is ours there). -->
+		<!-- Vertical scrolling stays native, except on category pages (swipe down is ours there) and
+			the map (it handles its own gestures). -->
 		<main
 			class="relative h-full overflow-hidden"
 			ontouchstart={onTouchStart}
 			ontouchmove={onTouchMove}
 			ontouchend={onTouchEnd}
 			ontouchcancel={onTouchCancel}
-			style:touch-action={category ? 'none' : 'pan-y'}
+			style:touch-action={category || page.url.pathname === '/map' ? 'none' : 'pan-y'}
 		>
 			{#key page.url.pathname}
 				<!-- Stacked so the outgoing and incoming pages can slide side by side. -->
@@ -146,7 +149,9 @@
 					class="absolute inset-0 overflow-auto bg-night {drag?.active
 						? 'transition-none'
 						: 'transition-transform duration-200'}"
-					style:transform={drag?.path === page.url.pathname ? `translateX(${drag.dx}px)` : undefined}
+					style:transform={drag?.path === page.url.pathname
+						? `translateX(${drag.dx}px)`
+						: undefined}
 					in:fly={slideParams(1)}
 					out:fly={slideParams(-1)}
 				>

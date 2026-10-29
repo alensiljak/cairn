@@ -1,6 +1,6 @@
 {
-	"name": "Waymarq",
-	"short_name": "Waymarq",
+	"name": "Cairn",
+	"short_name": "Cairn",
 	"description": "One-tap roadside mapping for OSM",
 	"start_url": "/",
 	"display": "standalone",
