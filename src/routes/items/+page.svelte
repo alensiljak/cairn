@@ -38,7 +38,7 @@
 	{#each markers as m (m.id)}
 		<li class="flex items-center gap-4 border-b border-raised py-3">
 			<div class="h-10 w-10 shrink-0 text-ink"><MarkerIcon marker={m} /></div>
-			<div class="flex flex-1 flex-col text-[0.85rem] text-muted">
+			<div class="flex min-w-0 flex-1 flex-col text-[0.85rem] text-muted">
 				<strong class="text-base text-ink"
 					>{m.audio
 						? 'Voice note'
@@ -53,7 +53,7 @@
 				</span>
 				<span>{new Date(m.createdAt).toLocaleString()}</span>
 				{#if m.audio}
-					<audio controls preload="none" src={audioUrls.get(m.id!)}></audio>
+					<audio controls preload="none" class="mt-1 w-full min-w-0"src={audioUrls.get(m.id!)}></audio>
 				{/if}
 			</div>
 			<button
