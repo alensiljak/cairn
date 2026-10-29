@@ -1,19 +1,22 @@
 <script lang="ts">
 	import Mic from '@lucide/svelte/icons/mic';
-	import { toggleVoice, voice } from './voice.svelte';
+	import { voice } from './voice.svelte';
+
+	/** Opens the voice note sheet; the big record button lives there. */
+	let { onclick, sheetOpen }: { onclick: () => void; sheetOpen: boolean } = $props();
 </script>
 
 <button
 	class:recording={voice.phase === 'recording'}
 	class:starting={voice.phase === 'starting'}
-	onclick={toggleVoice}
-	aria-label={voice.phase === 'recording' ? 'Stop voice note' : 'Record voice note'}
+	{onclick}
+	aria-label="Voice note"
 >
 	<Mic />
 	{#if voice.phase === 'recording'}<span>{voice.remaining}</span>{/if}
 </button>
 
-{#if voice.message}
+{#if voice.message && !sheetOpen}
 	<p class="toast" role="status">{voice.message}</p>
 {/if}
 

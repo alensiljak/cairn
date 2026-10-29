@@ -2,15 +2,21 @@
 // (or on a second tap). Audio is stored with the position where the note was started, if known;
 // it works offline because nothing is transcribed here.
 
-import { playError, playRecordStart, playRecordStop, unlockAudio } from './audio';
+import { getAudioContext, playError, playRecordStart, playRecordStop, unlockAudio } from './audio';
 import { getFix } from './gps.svelte';
 import { addMarker } from './markers';
 import { settings } from './settings.svelte';
+
+/** Number of bars in the level history shown while recording. */
+export const LEVEL_BARS = 32;
+const LEVEL_INTERVAL_MS = 70;
 
 export const voice = $state({
 	phase: 'idle' as 'idle' | 'starting' | 'recording',
 	/** Whole seconds left while recording. */
 	remaining: 0,
+	/** Recent microphone levels, 0..1, oldest first; scrolls as new ones arrive. */
+	levels: new Array<number>(LEVEL_BARS).fill(0),
 	/** Result of the last note, shown briefly. */
 	message: ''
 });
@@ -30,13 +36,41 @@ function say(message: string) {
 	messageTimer = setTimeout(() => (voice.message = ''), 3000);
 }
 
-/** Start a voice note, or end the one in progress early. */
-export async function toggleVoice() {
+/** Feed `voice.levels` from the microphone; returns the function that stops it. */
+function startMeter(stream: MediaStream): () => void {
+	const ctx = getAudioContext();
+	if (!ctx) return () => {};
+	const analyser = ctx.createAnalyser();
+	analyser.fftSize = 512;
+	// Not connected to the destination, so the microphone is never played back.
+	const source = ctx.createMediaStreamSource(stream);
+	source.connect(analyser);
+	const data = new Uint8Array(analyser.fftSize);
+	const timer = setInterval(() => {
+		analyser.getByteTimeDomainData(data);
+		let sum = 0;
+		for (const v of data) sum += ((v - 128) / 128) ** 2;
+		const rms = Math.sqrt(sum / data.length);
+		// Square root: speech is quiet next to full scale, this spreads it over the bar height.
+		voice.levels = [...voice.levels.slice(1), Math.min(1, Math.sqrt(rms) * 1.5)];
+	}, LEVEL_INTERVAL_MS);
+	return () => {
+		clearInterval(timer);
+		source.disconnect();
+		voice.levels = new Array<number>(LEVEL_BARS).fill(0);
+	};
+}
+
+/**
+ * Start a voice note, or end the one in progress early.
+ * Resolves, once the note is over, to whether it was saved.
+ */
+export async function toggleVoice(): Promise<boolean> {
 	if (voice.phase === 'recording') {
 		if (recorder?.state === 'recording') recorder.stop();
-		return;
+		return false;
 	}
-	if (voice.phase !== 'idle') return;
+	if (voice.phase !== 'idle') return false;
 
 	// Must run synchronously inside the tap, before any await.
 	unlockAudio();
@@ -45,6 +79,7 @@ export async function toggleVoice() {
 
 	let stream: MediaStream | undefined;
 	let ticker: ReturnType<typeof setInterval> | undefined;
+	let stopMeter: (() => void) | undefined;
 	try {
 		if (!navigator.mediaDevices?.getUserMedia || typeof MediaRecorder === 'undefined') {
 			throw new Error('Recording not supported');
@@ -56,6 +91,7 @@ export async function toggleVoice() {
 			audio: { channelCount: 1, noiseSuppression: true, echoCancellation: true }
 		});
 
+		stopMeter = startMeter(stream);
 		const mimeType = MIME_TYPES.find((t) => MediaRecorder.isTypeSupported(t));
 		const rec = new MediaRecorder(stream, { mimeType, audioBitsPerSecond: BITS_PER_SECOND });
 		recorder = rec;
@@ -90,6 +126,7 @@ export async function toggleVoice() {
 			audio: new Blob(chunks, { type: rec.mimeType })
 		});
 		say(coords ? 'Voice note saved' : 'Voice note saved, no position');
+		return true;
 	} catch (e) {
 		if (settings.sound) playError();
 		say(
@@ -97,8 +134,10 @@ export async function toggleVoice() {
 				e instanceof GeolocationPositionError || e instanceof Error ? e.message : String(e)
 			}`
 		);
+		return false;
 	} finally {
 		clearInterval(ticker);
+		stopMeter?.();
 		stream?.getTracks().forEach((t) => t.stop());
 		recorder = undefined;
 		voice.phase = 'idle';

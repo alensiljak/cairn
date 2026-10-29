@@ -10,10 +10,12 @@
 	import Menu from '@lucide/svelte/icons/menu';
 	import Sidebar from '../lib/Sidebar.svelte';
 	import VoiceButton from '../lib/VoiceButton.svelte';
+	import VoiceSheet from '../lib/VoiceSheet.svelte';
 	import { categories } from '../lib/categories';
 
 	let { children } = $props();
 	let menuOpen = $state(false);
+	let voiceOpen = $state(false);
 
 	const category = $derived(categories.find((c) => c.path === page.url.pathname));
 	const canSwipe = $derived(category !== undefined && categories.length > 1);
@@ -44,20 +46,23 @@
 
 	const SWIPE_MIN = 60; // px
 	let touch: { x: number; y: number } | undefined;
+	// The current gesture turned out to be vertical (a possible swipe down for the voice sheet).
+	let vertical = false;
 	// Live finger offset of the page currently shown, so it follows the drag.
 	let drag = $state<{ path: string; dx: number; active: boolean } | undefined>();
 
 	function onTouchStart(e: TouchEvent) {
 		touch = e.touches.length === 1 ? { x: e.touches[0].clientX, y: e.touches[0].clientY } : undefined;
+		vertical = false;
 	}
 
 	function onTouchMove(e: TouchEvent) {
-		if (!touch || !canSwipe || menuOpen || slide) return;
+		if (!touch || !canSwipe || menuOpen || slide || vertical) return;
 		const dx = e.touches[0].clientX - touch.x;
 		const dy = e.touches[0].clientY - touch.y;
 		if (!drag && Math.abs(dx) < 10 && Math.abs(dy) < 10) return;
 		if (!drag && Math.abs(dx) <= Math.abs(dy)) {
-			touch = undefined; // vertical gesture, leave it alone
+			vertical = true; // not a category swipe; onTouchEnd checks for a swipe down
 			return;
 		}
 		drag = { path: page.url.pathname, dx, active: true };
@@ -68,6 +73,12 @@
 		const dx = e.changedTouches[0].clientX - touch.x;
 		const dy = e.changedTouches[0].clientY - touch.y;
 		touch = undefined;
+		// Swipe down: the voice note sheet.
+		if (category && !menuOpen && dy >= SWIPE_MIN && dy > 1.5 * Math.abs(dx)) {
+			voiceOpen = true;
+			drag = undefined;
+			return;
+		}
 		// Mostly horizontal and long enough, so taps and vertical drags are ignored.
 		if (Math.abs(dx) >= SWIPE_MIN && Math.abs(dx) > 1.5 * Math.abs(dy)) {
 			if (drag) drag.active = false;
@@ -104,7 +115,7 @@
 		{/if}
 		<h1>{title}</h1>
 		{#if category}
-			<VoiceButton />
+			<VoiceButton onclick={() => (voiceOpen = !voiceOpen)} sheetOpen={voiceOpen} />
 			<a href={resolve('/items')} aria-label="Items"><List /></a>
 		{/if}
 	</header>
@@ -114,6 +125,7 @@
 			ontouchmove={onTouchMove}
 			ontouchend={onTouchEnd}
 			ontouchcancel={onTouchCancel}
+			style:touch-action={category ? 'none' : 'pan-y'}
 		>
 			{#key page.url.pathname}
 				<div
@@ -127,6 +139,9 @@
 				</div>
 			{/key}
 		</main>
+		{#if category}
+			<VoiceSheet bind:open={voiceOpen} />
+		{/if}
 		{#if canSwipe}
 			<span class="hint prev" aria-hidden="true"><ChevronLeft /></span>
 			<span class="hint next" aria-hidden="true"><ChevronRight /></span>
@@ -142,6 +157,8 @@
 	:global(html, body) {
 		margin: 0;
 		height: 100%;
+		/* No pull-to-refresh: swiping down opens the voice sheet. */
+		overscroll-behavior: none;
 		background: #111;
 		color: #eee;
 		font-family: system-ui, sans-serif;

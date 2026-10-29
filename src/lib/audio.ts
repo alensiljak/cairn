@@ -8,6 +8,11 @@ export function unlockAudio() {
 	if (ctx.state === 'suspended') void ctx.resume();
 }
 
+/** The shared audio context, once `unlockAudio` has run. */
+export function getAudioContext() {
+	return ctx;
+}
+
 function tone(freq: number, start: number, duration: number, type: OscillatorType = 'sine') {
 	if (!ctx) return;
 	const t = ctx.currentTime + start;
