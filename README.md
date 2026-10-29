@@ -8,17 +8,17 @@ Cairn is a tool to help map roadside features in OpenStreetMap. It is designed t
 
 ## Planned Features
 
-- ✅ quick entry
 - ✅ 6 buttons per screen
+- ✅ quick entry
+- store coordinates, the POI / note, heading, speed?
 - categories: speed limits, amenity, parking, petrol station, charger...
 - swipe left-right for more options, up-down for the next category
-- export to a file or upload to OSM directly
 - see items on a map
   - see if item already exists
-- store coordinates, the POI / note, heading, speed?
+- keep screen on
+- export to a file or upload to OSM directly
 - voice notes
 - undo button
-- keep screen on
 - expand to "walking mode" in addition to "driving mode"
 
 ## Tech Stack
