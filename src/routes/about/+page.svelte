@@ -11,6 +11,14 @@
 		travelling to record its position and OSM tags for later review and upload.
 	</p>
 	<p>
+		Repository on <a
+			class="text-link"
+			href="https://codeberg.org/alensiljak/cairn"
+			target="_blank"
+			rel="noreferrer">Codeberg</a
+		>.
+	</p>
+	<p>
 		Map data © <a
 			class="text-link"
 			href="https://www.openstreetmap.org/copyright"

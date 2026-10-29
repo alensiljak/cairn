@@ -6,7 +6,6 @@
 	import { page } from '$app/state';
 	import ChevronLeft from '@lucide/svelte/icons/chevron-left';
 	import ChevronRight from '@lucide/svelte/icons/chevron-right';
-	import List from '@lucide/svelte/icons/list';
 	import Menu from '@lucide/svelte/icons/menu';
 	import '../app.css';
 	import ConfirmDialog from '../lib/ConfirmDialog.svelte';
@@ -143,7 +142,6 @@
 		<h1 class="m-0 flex-1 text-[1.1rem]">{title}</h1>
 		{#if category}
 			<VoiceButton onclick={() => (voiceOpen = !voiceOpen)} sheetOpen={voiceOpen} />
-			<a class={headerButton} href={resolve('/items')} aria-label="Items"><List /></a>
 		{/if}
 	</header>
 	<div class="relative min-h-0 flex-1">
