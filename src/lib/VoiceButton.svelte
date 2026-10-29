@@ -17,7 +17,14 @@
 </button>
 
 {#if voice.message && !sheetOpen}
-	<p class="toast" role="status">{voice.message}</p>
+	<p
+		class="fixed bottom-[calc(env(safe-area-inset-bottom)+2.5rem)] left-1/2 z-10 m-0 -translate-x-1/2 rounded-lg border px-4 py-2 text-sm text-white {voice.ok
+			? 'border-go bg-go-dark'
+			: 'border-stop bg-stop-dark'}"
+		role="status"
+	>
+		{voice.message}
+	</p>
 {/if}
 
 <style>
@@ -30,36 +37,23 @@
 		padding: 0.5rem;
 		min-width: 2.5rem;
 		justify-content: center;
-		background: #2c2c2c;
-		color: #eee;
+		background: var(--color-raised);
+		color: var(--color-ink);
 	}
 
 	button.starting {
-		background: #6b5a1f;
+		background: var(--color-caution-dark);
 	}
 
 	button.recording {
-		background: #c62828;
+		background: var(--color-stop);
+		color: #fff;
 		animation: pulse 1s infinite;
 	}
 
 	span {
 		font-variant-numeric: tabular-nums;
 		font-weight: bold;
-	}
-
-	.toast {
-		position: fixed;
-		left: 50%;
-		bottom: calc(env(safe-area-inset-bottom) + 2.5rem);
-		transform: translateX(-50%);
-		margin: 0;
-		padding: 0.5rem 1rem;
-		border-radius: 0.5rem;
-		background: #333;
-		color: #eee;
-		font-size: 0.9rem;
-		z-index: 10;
 	}
 
 	@media (prefers-reduced-motion: no-preference) {

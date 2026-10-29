@@ -69,7 +69,7 @@
 			{/if}
 		</button>
 
-		<p class="hint">
+		<p class="hint" class:ok={voice.message && voice.ok} class:error={voice.message && !voice.ok}>
 			{voice.message || (recording ? 'Speak now' : 'Tap to record · swipe up to close')}
 		</p>
 	</div>
@@ -117,7 +117,7 @@
 		min-height: 0.35rem;
 		max-width: 0.6rem;
 		border-radius: 1rem;
-		background: #8ab4f8;
+		background: var(--color-go);
 		transition: height 0.07s linear;
 	}
 
@@ -140,13 +140,14 @@
 	}
 
 	.record.starting {
-		background: #6b5a1f;
-		border-color: #b89b2e;
+		background: var(--color-caution-dark);
+		border-color: var(--color-caution);
 	}
 
 	.record.recording {
-		background: #c62828;
-		border-color: #ff6b6b;
+		background: var(--color-stop-dark);
+		border-color: var(--color-stop);
+		color: #fff;
 	}
 
 	.count {
@@ -160,6 +161,14 @@
 		margin: 0;
 		color: #999;
 		text-align: center;
+	}
+
+	.hint.ok {
+		color: var(--color-go);
+	}
+
+	.hint.error {
+		color: var(--color-stop);
 	}
 
 	@media (orientation: landscape) {

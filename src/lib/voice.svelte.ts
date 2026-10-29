@@ -18,7 +18,9 @@ export const voice = $state({
 	/** Recent microphone levels, 0..1, oldest first; scrolls as new ones arrive. */
 	levels: new Array<number>(LEVEL_BARS).fill(0),
 	/** Result of the last note, shown briefly. */
-	message: ''
+	message: '',
+	/** Whether `message` reports success, for colouring it. */
+	ok: true
 });
 
 // Speech only, so a low bitrate mono codec is plenty. First supported type wins (Safari: mp4).
@@ -30,8 +32,9 @@ const BEEP_GAP_MS = 250;
 let recorder: MediaRecorder | undefined;
 let messageTimer: ReturnType<typeof setTimeout> | undefined;
 
-function say(message: string) {
+function say(message: string, ok: boolean) {
 	voice.message = message;
+	voice.ok = ok;
 	clearTimeout(messageTimer);
 	messageTimer = setTimeout(() => (voice.message = ''), 3000);
 }
@@ -125,14 +128,15 @@ export async function toggleVoice(): Promise<boolean> {
 			speed: coords?.speed ?? null,
 			audio: new Blob(chunks, { type: rec.mimeType })
 		});
-		say(coords ? 'Voice note saved' : 'Voice note saved, no position');
+		say(coords ? 'Voice note saved' : 'Voice note saved, no position', true);
 		return true;
 	} catch (e) {
 		if (settings.sound) playError();
 		say(
 			`Not saved: ${
 				e instanceof GeolocationPositionError || e instanceof Error ? e.message : String(e)
-			}`
+			}`,
+			false
 		);
 		return false;
 	} finally {

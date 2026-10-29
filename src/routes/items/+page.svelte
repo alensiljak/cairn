@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { onDestroy, onMount } from 'svelte';
+	import { confirmDialog } from '../../lib/confirm.svelte';
 	import { deleteMarker, listMarkers, type Marker } from '../../lib/markers';
 
 	let markers = $state<Marker[]>([]);
@@ -22,8 +23,10 @@
 
 	onDestroy(revokeUrls);
 
-	async function remove(id: number) {
-		await deleteMarker(id);
+	async function remove(m: Marker) {
+		const what = m.audio ? 'this voice note' : 'this item';
+		if (!(await confirmDialog(`Delete ${what}?`))) return;
+		await deleteMarker(m.id!);
 		await refresh();
 	}
 
@@ -51,7 +54,7 @@
 					<audio controls preload="none" src={audioUrls.get(m.id!)}></audio>
 				{/if}
 			</div>
-			<button onclick={() => remove(m.id!)} aria-label="Delete">✕</button>
+			<button onclick={() => remove(m)} aria-label="Delete">✕</button>
 		</li>
 	{:else}
 		{#if loaded}<li class="empty">No items yet.</li>{/if}
