@@ -141,7 +141,9 @@
 </script>
 
 <div class="relative h-full">
-	<div bind:this={container} class="absolute inset-0"></div>
+	<!-- Sized, not positioned: maplibre-gl.css sets `position: relative` on the map and, being
+		unlayered, would override Tailwind's `absolute inset-0` and collapse the height to 0. -->
+	<div bind:this={container} class="h-full w-full"></div>
 	{#if count === 0}
 		<p
 			class="pointer-events-none absolute inset-x-4 top-4 m-0 rounded-lg bg-panel/90 p-3 text-center text-muted"
