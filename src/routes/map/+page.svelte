@@ -68,6 +68,11 @@
 	const STOP_ICON =
 		'<svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><rect x="6" y="6" width="12" height="12" rx="1"/></svg>';
 
+	/** Button content: the icon with a one-word caption underneath. */
+	function labelled(icon: string, label: string) {
+		return `${icon}<span>${label}</span>`;
+	}
+
 	let player: HTMLAudioElement | undefined;
 
 	function stopPlayback() {
@@ -79,7 +84,7 @@
 
 	/** Green while playing, the regular colour otherwise; the icon shows the next action. */
 	function showPlaying(button: HTMLButtonElement, playing: boolean) {
-		button.innerHTML = playing ? STOP_ICON : PLAY_ICON;
+		button.innerHTML = playing ? labelled(STOP_ICON, 'Stop') : labelled(PLAY_ICON, 'Play');
 		button.classList.toggle('cairn-popup-playing', playing);
 	}
 
@@ -510,12 +515,14 @@
 				time.textContent = f.properties.time;
 				const move = document.createElement('button');
 				move.type = 'button';
-				move.className = 'cairn-popup-button';
+				move.className = 'cairn-popup-button cairn-popup-small';
 				move.title = 'Move';
 				move.setAttribute('aria-label', 'Move');
 				// Four-way arrows (lucide "move").
-				move.innerHTML =
-					'<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m5 9-3 3 3 3M9 5l3-3 3 3M15 19l-3 3-3-3M19 9l3 3-3 3M2 12h20M12 2v20"/></svg>';
+				move.innerHTML = labelled(
+					'<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m5 9-3 3 3 3M9 5l3-3 3 3M15 19l-3 3-3-3M19 9l3 3-3 3M2 12h20M12 2v20"/></svg>',
+					'Move'
+				);
 				move.onclick = () => {
 					moving = id;
 					// Closing the popup keeps the selection while a move is pending.
@@ -523,17 +530,22 @@
 				};
 				const remove = document.createElement('button');
 				remove.type = 'button';
-				remove.className = 'cairn-popup-button cairn-popup-delete';
+				remove.className = 'cairn-popup-button cairn-popup-small cairn-popup-delete';
 				remove.title = 'Delete';
 				remove.setAttribute('aria-label', 'Delete');
 				// Trash can (lucide "trash-2").
-				remove.innerHTML =
-					'<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M10 11v6M14 11v6"/></svg>';
+				remove.innerHTML = labelled(
+					'<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M10 11v6M14 11v6"/></svg>',
+					'Delete'
+				);
 				remove.onclick = () => {
 					confirming = { id, label: f.properties.label };
 				};
+				// Main actions on the first row, Move and Delete on a smaller second row.
 				const actions = document.createElement('div');
 				actions.className = 'cairn-popup-actions';
+				const secondary = document.createElement('div');
+				secondary.className = 'cairn-popup-actions cairn-popup-secondary';
 				const recording = markers.find((x) => x.id === id)?.audio;
 				if (recording) {
 					const play = document.createElement('button');
@@ -541,7 +553,7 @@
 					play.className = 'cairn-popup-button cairn-popup-neutral';
 					play.title = 'Play voice note';
 					play.setAttribute('aria-label', 'Play voice note');
-					play.innerHTML = PLAY_ICON;
+					play.innerHTML = labelled(PLAY_ICON, 'Play');
 					play.onclick = () => togglePlay(recording, play);
 					actions.append(play);
 				}
@@ -553,8 +565,10 @@
 					transcribe.title = 'Transcribe';
 					transcribe.setAttribute('aria-label', 'Transcribe');
 					// Pencil (lucide "pencil").
-					transcribe.innerHTML =
-						'<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>';
+					transcribe.innerHTML = labelled(
+						'<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>',
+						'Edit'
+					);
 					transcribe.onclick = () => {
 						stopPlayback();
 						noteDialog = { title: 'Transcribe', text: item.tags.note ?? '', id };
@@ -568,7 +582,11 @@
 					note.target = '_blank';
 					note.rel = 'noreferrer';
 					note.title = 'Open the OSM note';
-					note.textContent = 'Note';
+					// Arrow out of a box (lucide "external-link").
+					note.innerHTML = labelled(
+						'<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h6v6M10 14 21 3M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/></svg>',
+						'Note'
+					);
 					actions.append(note);
 				} else if (item && canUpload(item)) {
 					const upload = document.createElement('button');
@@ -577,8 +595,10 @@
 					upload.title = 'Upload as OSM note';
 					upload.setAttribute('aria-label', 'Upload as OSM note');
 					// Tray with an arrow up (lucide "upload").
-					upload.innerHTML =
-						'<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>';
+					upload.innerHTML = labelled(
+						'<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>',
+						'Upload'
+					);
 					upload.onclick = async () => {
 						upload.disabled = true;
 						try {
@@ -594,7 +614,7 @@
 					};
 					actions.append(upload);
 				}
-				actions.append(move, remove);
+				secondary.append(move, remove);
 				const text = document.createElement('div');
 				text.className = 'cairn-popup-text';
 				text.append(title, time);
@@ -609,7 +629,9 @@
 					header.append(iconBox);
 				}
 				header.append(text);
-				body.append(header, actions);
+				body.append(header);
+				if (actions.childElementCount) body.append(actions);
+				body.append(secondary);
 				const p = new maplibre.Popup({ offset: [0, -44], className: 'cairn-popup-root' })
 					.setLngLat([lon, lat])
 					.setDOMContent(body)
@@ -933,7 +955,7 @@
 	}
 	:global(.cairn-popup-actions) {
 		display: flex;
-		gap: 12px;
+		gap: 8px;
 		margin-top: 8px;
 	}
 	:global(.cairn-popup-neutral) {
@@ -945,10 +967,32 @@
 		color: #ffffff !important;
 	}
 	:global(.cairn-popup-link) {
-		width: auto;
-		padding: 0 14px;
-		font-weight: 600;
 		text-decoration: none;
+	}
+	:global(.cairn-popup-actions) {
+		min-width: 15rem;
+	}
+	:global(.cairn-popup-actions .cairn-popup-button) {
+		flex: 1;
+		width: auto;
+		min-width: 0;
+		flex-direction: column;
+		gap: 2px;
+		font-size: 0.7rem;
+		font-weight: 600;
+	}
+	/* Move and Delete: shorter, icon beside the caption. */
+	:global(.cairn-popup-secondary) {
+		margin-top: 0;
+	}
+	:global(.cairn-popup-secondary .cairn-popup-button) {
+		height: 36px;
+		flex-direction: row;
+		gap: 6px;
+	}
+	:global(.cairn-popup-secondary .cairn-popup-button svg) {
+		width: 18px;
+		height: 18px;
 	}
 	:global(.cairn-popup-delete) {
 		background: #e53935 !important;
