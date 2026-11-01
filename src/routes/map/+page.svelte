@@ -51,20 +51,26 @@
 		player = undefined;
 	}
 
-	/** Plays the recording, or stops it if already playing; the button shows the next action. */
+	/** Green while playing, the regular colour otherwise; the icon shows the next action. */
+	function showPlaying(button: HTMLButtonElement, playing: boolean) {
+		button.innerHTML = playing ? STOP_ICON : PLAY_ICON;
+		button.classList.toggle('cairn-popup-playing', playing);
+	}
+
+	/** Plays the recording, or stops it if already playing. */
 	function togglePlay(blob: Blob, button: HTMLButtonElement) {
 		if (player) {
 			stopPlayback();
-			button.innerHTML = PLAY_ICON;
+			showPlaying(button, false);
 			return;
 		}
 		const a = new Audio(URL.createObjectURL(blob));
 		player = a;
-		button.innerHTML = STOP_ICON;
+		showPlaying(button, true);
 		const reset = () => {
 			if (player !== a) return;
 			stopPlayback();
-			button.innerHTML = PLAY_ICON;
+			showPlaying(button, false);
 		};
 		a.onended = reset;
 		a.play().catch(reset);
@@ -615,6 +621,10 @@
 	}
 	:global(.cairn-popup-neutral) {
 		background: #616161 !important;
+		color: #ffffff !important;
+	}
+	:global(.cairn-popup-playing) {
+		background: #43a047 !important;
 		color: #ffffff !important;
 	}
 	:global(.cairn-popup-delete) {
