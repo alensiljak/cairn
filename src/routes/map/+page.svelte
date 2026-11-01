@@ -636,7 +636,7 @@
 				body.append(header);
 				if (actions.childElementCount) body.append(actions);
 				body.append(secondary);
-				const p = new maplibre.Popup({ offset: [0, -44], className: 'cairn-popup-root' })
+				const p = new maplibre.Popup({ offset: [0, -44], className: 'cairn-popup-root', maxWidth: '300px' })
 					.setLngLat([lon, lat])
 					.setDOMContent(body)
 					.addTo(m);
@@ -930,7 +930,7 @@
 		display: flex;
 		flex-direction: column;
 		gap: 4px;
-		min-width: 9rem;
+		min-width: 15rem;
 		padding-right: 12px;
 	}
 	:global(.cairn-popup-header) {
@@ -972,9 +972,6 @@
 	}
 	:global(.cairn-popup-link) {
 		text-decoration: none;
-	}
-	:global(.cairn-popup-actions) {
-		min-width: 15rem;
 	}
 	:global(.cairn-popup-actions .cairn-popup-button) {
 		flex: 1;
