@@ -2,15 +2,21 @@
 // necessarily where the feature is, so a note (for a human to turn into real OSM data) is the
 // right form rather than a node.
 
-import { markUploaded, type Marker } from './markers';
+import { markerLabel, markUploaded, type Marker } from './markers';
 import { createNote, login, osm } from './osm.svelte';
 
-/** Note text for a marker: its tags, one per line; undefined if there is nothing to say. */
+/**
+ * Note text for a marker: its name if it is a voice note (the recording itself isn't uploaded; the
+ * number matches the item in the app), its tags one per line, and when it was recorded.
+ */
 export function noteText(m: Marker): string | undefined {
 	const { note, ...rest } = m.tags;
 	const tagLines = Object.entries(rest).map(([k, v]) => `${k}=${v}`);
-	const body = [note, tagLines.join('\n')].filter(Boolean).join('\n\n');
-	return body ? `${body}\n\nRecorded with Cairn.` : undefined;
+	const body = [m.audio ? markerLabel(m) : undefined, note, tagLines.join('\n')]
+		.filter(Boolean)
+		.join('\n\n');
+	const when = new Date(m.createdAt).toISOString().slice(0, 16).replace('T', ' ');
+	return body ? `${body}\n\nRecorded with Cairn, ${when} UTC.` : undefined;
 }
 
 /** Whether a note can be made from the marker: it needs a position and something to say. */

@@ -18,6 +18,7 @@
 		addMarker,
 		deleteMarker,
 		listMarkers,
+		markerLabel,
 		moveMarker,
 		toFeature,
 		type Marker
@@ -171,14 +172,6 @@
 		refresh();
 	}
 
-	function label(m: Marker): string {
-		return m.audio
-			? 'Voice note'
-			: Object.entries(m.tags)
-					.map(([k, v]) => `${k}=${v}`)
-					.join(' ');
-	}
-
 	/** Markers that have a position, as a GeoJSON collection for MapLibre. */
 	function collection(items: Marker[]) {
 		const features = items
@@ -187,7 +180,7 @@
 				...toFeature(m),
 				properties: {
 					id: m.id!,
-					label: label(m),
+					label: markerLabel(m),
 					time: new Date(m.createdAt).toLocaleString(),
 					pin: pinKey(m)
 				}

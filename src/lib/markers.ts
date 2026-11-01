@@ -20,6 +20,8 @@ export interface Marker {
 	speed: number | null;
 	/** Voice note recording, to be transcribed into a `note` tag later. Not part of the OSM data. */
 	audio?: Blob;
+	/** Running number of a voice note ("Voice note #3"), to tell them apart. */
+	voiceNo?: number;
 	/** Epoch milliseconds. */
 	createdAt: number;
 	/** When it was uploaded to OSM as a note (epoch milliseconds); kept until purged. */
@@ -71,17 +73,67 @@ function request<T>(req: IDBRequest<T>): Promise<T> {
 	});
 }
 
+const VOICE_COUNTER_KEY = 'cairn.voice-counter';
+
+function readVoiceCounter(): number {
+	try {
+		return Number(localStorage.getItem(VOICE_COUNTER_KEY)) || 0;
+	} catch {
+		return 0;
+	}
+}
+
+function writeVoiceCounter(n: number) {
+	try {
+		localStorage.setItem(VOICE_COUNTER_KEY, String(n));
+	} catch {
+		// Storage unavailable: numbering continues from the highest number stored.
+	}
+}
+
+/**
+ * Gives voice notes recorded before numbering existed their number, oldest first, and returns the
+ * highest number used so far. The counter outlives deleted notes, so a number is never reused.
+ */
+function numberVoiceNotes(store: IDBObjectStore, all: Marker[]): number {
+	let counter = Math.max(readVoiceCounter(), ...all.map((m) => m.voiceNo ?? 0));
+	const unnumbered = all
+		.filter((m) => m.audio && !m.voiceNo)
+		.sort((a, b) => a.createdAt - b.createdAt);
+	for (const m of unnumbered) {
+		m.voiceNo = ++counter;
+		store.put(m);
+	}
+	writeVoiceCounter(counter);
+	return counter;
+}
+
 export async function addMarker(marker: NewMarker): Promise<number> {
 	const db = await openDb();
 	const store = db.transaction(STORE, 'readwrite').objectStore(STORE);
-	return (await request(store.add({ ...marker, createdAt: Date.now() }))) as number;
+	let voiceNo: number | undefined;
+	if (marker.audio) {
+		voiceNo = numberVoiceNotes(store, (await request(store.getAll())) as Marker[]) + 1;
+		writeVoiceCounter(voiceNo);
+	}
+	return (await request(store.add({ ...marker, voiceNo, createdAt: Date.now() }))) as number;
 }
 
 /** All markers, newest first. */
 export async function listMarkers(): Promise<Marker[]> {
 	const db = await openDb();
-	const all = await request(db.transaction(STORE).objectStore(STORE).getAll());
-	return (all as Marker[]).sort((a, b) => b.createdAt - a.createdAt);
+	const store = db.transaction(STORE, 'readwrite').objectStore(STORE);
+	const all = (await request(store.getAll())) as Marker[];
+	numberVoiceNotes(store, all);
+	return all.sort((a, b) => b.createdAt - a.createdAt);
+}
+
+/** What the marker is called in the app (pop-up, list) and in its OSM note. */
+export function markerLabel(m: Marker): string {
+	if (m.audio) return m.voiceNo ? `Voice note #${m.voiceNo}` : 'Voice note';
+	return Object.entries(m.tags)
+		.map(([k, v]) => `${k}=${v}`)
+		.join(' ');
 }
 
 export async function deleteMarker(id: number): Promise<void> {

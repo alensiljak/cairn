@@ -3,7 +3,13 @@
 	import { confirmDialog } from '../../lib/confirm.svelte';
 	import MarkerIcon from '../../lib/MarkerIcon.svelte';
 	import Upload from '@lucide/svelte/icons/upload';
-	import { deleteMarker, listMarkers, purgeUploaded, type Marker } from '../../lib/markers';
+	import {
+		deleteMarker,
+		listMarkers,
+		markerLabel,
+		purgeUploaded,
+		type Marker
+	} from '../../lib/markers';
 	import { osmUrl } from '../../lib/osm.svelte';
 	import { canUpload, uploadMarker } from '../../lib/upload';
 
@@ -71,13 +77,7 @@
 		<li class="flex items-center gap-4 border-b border-raised py-3" class:opacity-50={m.uploadedAt}>
 			<div class="h-10 w-10 shrink-0 text-ink"><MarkerIcon marker={m} /></div>
 			<div class="flex min-w-0 flex-1 flex-col text-[0.85rem] text-muted">
-				<strong class="text-base text-ink"
-					>{m.audio
-						? 'Voice note'
-						: Object.entries(m.tags)
-								.map(([k, v]) => `${k}=${v}`)
-								.join(' ')}</strong
-				>
+				<strong class="text-base text-ink">{markerLabel(m)}</strong>
 				<span>
 					{m.lat !== null && m.lon !== null
 						? `${m.lat.toFixed(5)}, ${m.lon.toFixed(5)}`

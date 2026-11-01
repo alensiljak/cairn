@@ -16,11 +16,12 @@ Cairn is a tool to help map roadside features in OpenStreetMap. It is designed t
 - ✅ see items on a map
   - see if item already exists
   - ✅ ability to move item's location
-  - add item directly on the map
+  - ✅add item directly on the map
 - keep screen on
 - export to a file or upload to OSM directly
 - voice notes
   - ✅ list
+  - ✅ upload OSM Note with the recording number (reminder)
   - transcribe into a text Note later and mark as processed
 - undo button
 - expand to "walking mode" in addition to "driving mode", adding more options
