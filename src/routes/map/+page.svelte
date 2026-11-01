@@ -11,6 +11,7 @@
 	} from 'maplibre-gl';
 	import 'maplibre-gl/dist/maplibre-gl.css';
 	import { getBasemap } from '../../lib/basemaps';
+	import NoteDialog from '../../lib/NoteDialog.svelte';
 	import { osmUrl } from '../../lib/osm.svelte';
 	import { settings } from '../../lib/settings.svelte';
 	import { canUpload, uploadMarker } from '../../lib/upload';
@@ -20,6 +21,7 @@
 		listMarkers,
 		markerLabel,
 		moveMarker,
+		setNote,
 		toFeature,
 		type Marker
 	} from '../../lib/markers';
@@ -131,8 +133,11 @@
 	const POINTER_SOURCE = 'pointer';
 	/** Spot tapped on the map where a manual note can be added. */
 	let pointer = $state<{ lng: number; lat: number } | undefined>();
-	/** Text of the note being written; undefined while the dialog is closed. */
-	let noteText = $state<string | undefined>();
+	/**
+	 * The note dialog: a new note at the pointer, or (with `id`) the transcript of a voice note.
+	 * Undefined while it is closed.
+	 */
+	let noteDialog = $state<{ title: string; text: string; id?: number } | undefined>();
 
 	function setPointer(at: { lng: number; lat: number } | undefined) {
 		pointer = at;
@@ -154,9 +159,19 @@
 	}
 
 	async function saveNote() {
-		const text = noteText?.trim();
+		const text = noteDialog?.text.trim() ?? '';
+		const id = noteDialog?.id;
+		noteDialog = undefined;
+		if (id !== undefined) {
+			await setNote(id, text);
+			const item = markers.find((x) => x.id === id);
+			if (item) {
+				const { note: _, ...tags } = item.tags;
+				item.tags = text ? { ...tags, note: text } : tags;
+			}
+			return;
+		}
 		const at = pointer;
-		noteText = undefined;
 		if (!text || !at) return;
 		const marker = {
 			tags: { note: text },
@@ -166,8 +181,8 @@
 			heading: null,
 			speed: null
 		};
-		const id = await addMarker(marker);
-		markers = [{ ...marker, id, createdAt: Date.now() }, ...markers];
+		const newId = await addMarker(marker);
+		markers = [{ ...marker, id: newId, createdAt: Date.now() }, ...markers];
 		setPointer(undefined);
 		refresh();
 	}
@@ -462,6 +477,21 @@
 					actions.append(play);
 				}
 				const item = markers.find((x) => x.id === id);
+				if (item?.audio && !item.uploadedAt) {
+					const transcribe = document.createElement('button');
+					transcribe.type = 'button';
+					transcribe.className = 'cairn-popup-button';
+					transcribe.title = 'Transcribe';
+					transcribe.setAttribute('aria-label', 'Transcribe');
+					// Pencil (lucide "pencil").
+					transcribe.innerHTML =
+						'<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>';
+					transcribe.onclick = () => {
+						stopPlayback();
+						noteDialog = { title: 'Transcribe', text: item.tags.note ?? '', id };
+					};
+					actions.append(transcribe);
+				}
 				if (item?.uploadedAt) {
 					const note = document.createElement('a');
 					note.className = 'cairn-popup-button cairn-popup-link';
@@ -666,7 +696,7 @@
 			class="absolute right-4 bottom-8 flex h-14 w-14 items-center justify-center rounded-full bg-[#fbc02d] text-[#111111] shadow-lg transition active:scale-95"
 			title="Add note"
 			aria-label="Add note"
-			onclick={() => (noteText = '')}
+			onclick={() => (noteDialog = { title: 'Add note', text: '' })}
 		>
 			<svg
 				width="28"
@@ -681,46 +711,13 @@
 			>
 		</button>
 	{/if}
-	{#if noteText !== undefined}
-		<div
-			class="absolute inset-0 flex items-center justify-center bg-black/50 px-6"
-			role="presentation"
-			onclick={() => (noteText = undefined)}
-		>
-			<div
-				class="w-full max-w-sm rounded-2xl bg-panel p-5 shadow-xl"
-				role="dialog"
-				aria-modal="true"
-				aria-labelledby="note-title"
-				tabindex="-1"
-				onclick={(e) => e.stopPropagation()}
-				onkeydown={(e) => e.key === 'Escape' && (noteText = undefined)}
-			>
-				<h2 id="note-title" class="m-0 text-lg font-semibold">Add note</h2>
-				<!-- svelte-ignore a11y_autofocus -->
-				<textarea
-					class="mt-3 mb-4 box-border block w-full rounded-lg border border-white/20 bg-transparent p-2 text-ink"
-					rows="3"
-					autofocus
-					bind:value={noteText}></textarea>
-				<div class="flex justify-end gap-2">
-					<button
-						type="button"
-						class="rounded-lg px-4 py-2 transition active:scale-95"
-						onclick={() => (noteText = undefined)}
-					>
-						Cancel
-					</button>
-					<button
-						type="button"
-						class="rounded-lg bg-[#43a047] px-4 py-2 font-semibold text-white transition active:scale-95"
-						onclick={saveNote}
-					>
-						Save
-					</button>
-				</div>
-			</div>
-		</div>
+	{#if noteDialog}
+		<NoteDialog
+			title={noteDialog.title}
+			bind:text={noteDialog.text}
+			onsave={saveNote}
+			oncancel={() => (noteDialog = undefined)}
+		/>
 	{/if}
 	{#if moving !== undefined}
 		<div

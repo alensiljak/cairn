@@ -141,6 +141,16 @@ export async function deleteMarker(id: number): Promise<void> {
 	await request(db.transaction(STORE, 'readwrite').objectStore(STORE).delete(id));
 }
 
+/** Sets the `note` tag (the transcript of a voice note); empty text removes it. */
+export async function setNote(id: number, text: string): Promise<void> {
+	const db = await openDb();
+	const store = db.transaction(STORE, 'readwrite').objectStore(STORE);
+	const marker = (await request(store.get(id))) as Marker | undefined;
+	if (!marker) return;
+	const { note: _, ...tags } = marker.tags;
+	await request(store.put({ ...marker, tags: text ? { ...tags, note: text } : tags }));
+}
+
 export async function markUploaded(id: number, noteId: number, uploadedAt: number): Promise<void> {
 	const db = await openDb();
 	const store = db.transaction(STORE, 'readwrite').objectStore(STORE);

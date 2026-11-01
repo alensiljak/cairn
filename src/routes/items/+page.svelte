@@ -2,14 +2,17 @@
 	import { onDestroy, onMount } from 'svelte';
 	import { confirmDialog } from '../../lib/confirm.svelte';
 	import MarkerIcon from '../../lib/MarkerIcon.svelte';
+	import Pencil from '@lucide/svelte/icons/pencil';
 	import Upload from '@lucide/svelte/icons/upload';
 	import {
 		deleteMarker,
 		listMarkers,
 		markerLabel,
 		purgeUploaded,
+		setNote,
 		type Marker
 	} from '../../lib/markers';
+	import NoteDialog from '../../lib/NoteDialog.svelte';
 	import { osmUrl } from '../../lib/osm.svelte';
 	import { canUpload, uploadMarker } from '../../lib/upload';
 
@@ -52,6 +55,17 @@
 		await refresh();
 	}
 
+	/** The voice note being transcribed; the dialog is closed while undefined. */
+	let transcribing = $state<{ id: number; text: string } | undefined>();
+
+	async function saveTranscript() {
+		if (!transcribing) return;
+		const { id, text } = transcribing;
+		transcribing = undefined;
+		await setNote(id, text.trim());
+		await refresh();
+	}
+
 	async function purge() {
 		const n = uploadedCount;
 		if (!(await confirmDialog(`Delete ${n} uploaded ${n === 1 ? 'item' : 'items'}?`, 'Purge')))
@@ -63,6 +77,14 @@
 	onMount(refresh);
 </script>
 
+{#if transcribing}
+	<NoteDialog
+		title="Transcribe"
+		bind:text={transcribing.text}
+		onsave={saveTranscript}
+		oncancel={() => (transcribing = undefined)}
+	/>
+{/if}
 {#if error}
 	<p class="m-4 rounded-lg bg-panel p-3 text-[#e53935]" role="alert">{error}</p>
 {/if}
@@ -89,6 +111,14 @@
 					></audio>
 				{/if}
 			</div>
+			{#if m.audio && !m.uploadedAt}
+				<button
+					class="rounded-lg border-0 bg-raised px-3 py-2 text-ink"
+					onclick={() => (transcribing = { id: m.id!, text: m.tags.note ?? '' })}
+					aria-label="Transcribe"
+					title="Transcribe"><Pencil size={18} /></button
+				>
+			{/if}
 			{#if m.uploadedAt}
 				<a
 					class="rounded-lg bg-raised px-3 py-2 text-link"
