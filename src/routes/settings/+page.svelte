@@ -2,6 +2,7 @@
 	import { playSuccess, unlockAudio } from '../../lib/audio';
 	import { basemaps } from '../../lib/basemaps';
 	import { categories } from '../../lib/categories';
+	import { login, logout, osm, osmConfigured } from '../../lib/osm.svelte';
 	import { saveSettings, settings } from '../../lib/settings.svelte';
 
 	function testSound() {
@@ -80,6 +81,34 @@
 				{/each}
 			</select>
 		</label>
+	</fieldset>
+
+	<fieldset class={fieldset}>
+		<legend>OpenStreetMap</legend>
+		<div class={label}>
+			<span>
+				{osm.token ? 'Signed in' : 'Not signed in'}
+				<small class={hint}>
+					{#if !osmConfigured}
+						This build has no OpenStreetMap client id, so uploading is unavailable.
+					{:else}
+						Needed to upload items as notes. Cairn can only add notes, nothing else.
+					{/if}
+				</small>
+			</span>
+			{#if osm.token}
+				<button class="ml-auto rounded-lg border-0 bg-raised px-4 py-2 text-ink" onclick={logout}>
+					Sign out
+				</button>
+			{:else if osmConfigured}
+				<button
+					class="ml-auto rounded-lg border-0 bg-raised px-4 py-2 text-ink"
+					onclick={() => login('/settings')}
+				>
+					Sign in
+				</button>
+			{/if}
+		</div>
 	</fieldset>
 
 	<fieldset class={fieldset}>

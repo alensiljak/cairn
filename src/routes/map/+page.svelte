@@ -11,7 +11,9 @@
 	} from 'maplibre-gl';
 	import 'maplibre-gl/dist/maplibre-gl.css';
 	import { getBasemap } from '../../lib/basemaps';
+	import { osmUrl } from '../../lib/osm.svelte';
 	import { settings } from '../../lib/settings.svelte';
+	import { canUpload, uploadMarker } from '../../lib/upload';
 	import {
 		addMarker,
 		deleteMarker,
@@ -27,6 +29,9 @@
 	// Voice notes in caution yellow (awaiting transcription), tagged items in go green.
 	const VOICE = '#fbc02d';
 	const TAGGED = '#43a047';
+	// Uploaded as OSM notes: nothing left to do in the app, so muted.
+	const UPLOADED = '#9e9e9e';
+	const UPLOADED_SUFFIX = '-done';
 	// Not red: red is reserved for destructive actions.
 	const SELECTED = '#1e88e5';
 	const POINTER = '#e53935';
@@ -40,6 +45,16 @@
 	let count = $state<number | undefined>();
 	/** Id of the item being moved; the next map click sets its new position. */
 	let moving = $state<number | undefined>();
+
+	/** Brief message (upload result or error) shown over the map. */
+	let status = $state<string | undefined>();
+	let statusTimer: ReturnType<typeof setTimeout> | undefined;
+
+	function showStatus(message: string) {
+		status = message;
+		clearTimeout(statusTimer);
+		statusTimer = setTimeout(() => (status = undefined), 5000);
+	}
 
 	let markers: Marker[] = [];
 	/** Where the pin being moved has been dragged to; saved on Done, discarded on Cancel. */
@@ -182,6 +197,10 @@
 
 	/** Which pin image a marker uses; the same key means the same pictogram. */
 	function pinKey(m: Marker): string {
+		return pinBase(m) + (m.uploadedAt ? UPLOADED_SUFFIX : '');
+	}
+
+	function pinBase(m: Marker): string {
 		if (m.audio) return 'voice';
 		if (m.tags.note) return 'note';
 		if (m.tags.traffic_sign === 'maxspeed' && m.tags.maxspeed) return `speed-${m.tags.maxspeed}`;
@@ -222,7 +241,7 @@
 		}
 		for (const [key, item] of todo) {
 			const glyph = await glyphImage(item);
-			const color = key === 'voice' ? VOICE : TAGGED;
+			const color = key.endsWith(UPLOADED_SUFFIX) ? UPLOADED : key === 'voice' ? VOICE : TAGGED;
 			const round = key.startsWith('speed-');
 			const pin = pinImage(color, PIN_SCALE, '#111111', glyph, round);
 			const sel = pinImage(SELECTED, SELECTED_SCALE, '#ffffff', glyph, round);
@@ -449,6 +468,40 @@
 					play.onclick = () => togglePlay(recording, play);
 					actions.append(play);
 				}
+				const item = markers.find((x) => x.id === id);
+				if (item?.uploadedAt) {
+					const note = document.createElement('a');
+					note.className = 'cairn-popup-button cairn-popup-link';
+					note.href = `${osmUrl}/note/${item.noteId}`;
+					note.target = '_blank';
+					note.rel = 'noreferrer';
+					note.title = 'Open the OSM note';
+					note.textContent = 'Note';
+					actions.append(note);
+				} else if (item && canUpload(item)) {
+					const upload = document.createElement('button');
+					upload.type = 'button';
+					upload.className = 'cairn-popup-button';
+					upload.title = 'Upload as OSM note';
+					upload.setAttribute('aria-label', 'Upload as OSM note');
+					// Tray with an arrow up (lucide "upload").
+					upload.innerHTML =
+						'<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>';
+					upload.onclick = async () => {
+						upload.disabled = true;
+						try {
+							// Without a login this leaves for OSM's sign-in page.
+							if (await uploadMarker(item)) {
+								showStatus(`Uploaded as note #${item.noteId}.`);
+								select(id, lon, lat);
+							}
+						} catch (e) {
+							showStatus(e instanceof Error ? e.message : String(e));
+						}
+						upload.disabled = false;
+					};
+					actions.append(upload);
+				}
 				actions.append(move, remove);
 				const text = document.createElement('div');
 				text.className = 'cairn-popup-text';
@@ -549,6 +602,7 @@
 	});
 
 	onDestroy(() => {
+		clearTimeout(statusTimer);
 		stopPlayback();
 		popup?.remove();
 		map?.remove();
@@ -565,6 +619,14 @@
 			class="pointer-events-none absolute inset-x-4 top-4 m-0 rounded-lg bg-panel/90 p-3 text-center text-muted"
 		>
 			No items with a position yet.
+		</p>
+	{/if}
+	{#if status}
+		<p
+			class="pointer-events-none absolute inset-x-4 top-4 z-10 m-0 rounded-lg bg-panel/90 p-3 text-center"
+			role="status"
+		>
+			{status}
 		</p>
 	{/if}
 	{#if confirming}
@@ -774,6 +836,12 @@
 	:global(.cairn-popup-playing) {
 		background: #43a047 !important;
 		color: #ffffff !important;
+	}
+	:global(.cairn-popup-link) {
+		width: auto;
+		padding: 0 14px;
+		font-weight: 600;
+		text-decoration: none;
 	}
 	:global(.cairn-popup-delete) {
 		background: #e53935 !important;

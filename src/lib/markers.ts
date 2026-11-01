@@ -22,6 +22,10 @@ export interface Marker {
 	audio?: Blob;
 	/** Epoch milliseconds. */
 	createdAt: number;
+	/** When it was uploaded to OSM as a note (epoch milliseconds); kept until purged. */
+	uploadedAt?: number;
+	/** Id of the OSM note it became. */
+	noteId?: number;
 }
 
 export type NewMarker = Omit<Marker, 'id' | 'createdAt'>;
@@ -83,6 +87,23 @@ export async function listMarkers(): Promise<Marker[]> {
 export async function deleteMarker(id: number): Promise<void> {
 	const db = await openDb();
 	await request(db.transaction(STORE, 'readwrite').objectStore(STORE).delete(id));
+}
+
+export async function markUploaded(id: number, noteId: number, uploadedAt: number): Promise<void> {
+	const db = await openDb();
+	const store = db.transaction(STORE, 'readwrite').objectStore(STORE);
+	const marker = (await request(store.get(id))) as Marker | undefined;
+	if (!marker) return;
+	await request(store.put({ ...marker, noteId, uploadedAt }));
+}
+
+/** Deletes every uploaded marker; returns how many. */
+export async function purgeUploaded(): Promise<number> {
+	const db = await openDb();
+	const store = db.transaction(STORE, 'readwrite').objectStore(STORE);
+	const uploaded = ((await request(store.getAll())) as Marker[]).filter((m) => m.uploadedAt);
+	await Promise.all(uploaded.map((m) => request(store.delete(m.id!))));
+	return uploaded.length;
 }
 
 /** Sets a new position; the accuracy/heading/speed of the original fix no longer apply. */

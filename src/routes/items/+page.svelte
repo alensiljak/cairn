@@ -2,10 +2,15 @@
 	import { onDestroy, onMount } from 'svelte';
 	import { confirmDialog } from '../../lib/confirm.svelte';
 	import MarkerIcon from '../../lib/MarkerIcon.svelte';
-	import { deleteMarker, listMarkers, type Marker } from '../../lib/markers';
+	import Upload from '@lucide/svelte/icons/upload';
+	import { deleteMarker, listMarkers, purgeUploaded, type Marker } from '../../lib/markers';
+	import { osmUrl } from '../../lib/osm.svelte';
+	import { canUpload, uploadMarker } from '../../lib/upload';
 
 	let markers = $state<Marker[]>([]);
 	let loaded = $state(false);
+	let error = $state<string | undefined>();
+	const uploadedCount = $derived(markers.filter((m) => m.uploadedAt).length);
 	// Object URLs for voice note playback.
 	let audioUrls = new Map<number, string>();
 
@@ -31,12 +36,39 @@
 		await refresh();
 	}
 
+	async function upload(m: Marker) {
+		error = undefined;
+		try {
+			await uploadMarker(m);
+		} catch (e) {
+			error = e instanceof Error ? e.message : String(e);
+		}
+		await refresh();
+	}
+
+	async function purge() {
+		const n = uploadedCount;
+		if (!(await confirmDialog(`Delete ${n} uploaded ${n === 1 ? 'item' : 'items'}?`, 'Purge')))
+			return;
+		await purgeUploaded();
+		await refresh();
+	}
+
 	onMount(refresh);
 </script>
 
+{#if error}
+	<p class="m-4 rounded-lg bg-panel p-3 text-[#e53935]" role="alert">{error}</p>
+{/if}
+{#if uploadedCount > 0}
+	<div class="mx-4 mt-2 flex items-center justify-between gap-3 rounded-lg bg-panel p-3">
+		<span class="text-muted">{uploadedCount} uploaded as OSM notes</span>
+		<button class="rounded-lg border-0 bg-raised px-3 py-2 text-ink" onclick={purge}>Purge</button>
+	</div>
+{/if}
 <ul class="m-0 list-none px-4 py-2">
 	{#each markers as m (m.id)}
-		<li class="flex items-center gap-4 border-b border-raised py-3">
+		<li class="flex items-center gap-4 border-b border-raised py-3" class:opacity-50={m.uploadedAt}>
 			<div class="h-10 w-10 shrink-0 text-ink"><MarkerIcon marker={m} /></div>
 			<div class="flex min-w-0 flex-1 flex-col text-[0.85rem] text-muted">
 				<strong class="text-base text-ink"
@@ -57,6 +89,22 @@
 					></audio>
 				{/if}
 			</div>
+			{#if m.uploadedAt}
+				<a
+					class="rounded-lg bg-raised px-3 py-2 text-link"
+					href={`${osmUrl}/note/${m.noteId}`}
+					target="_blank"
+					rel="noreferrer"
+					title="Open the OSM note">Note</a
+				>
+			{:else if canUpload(m)}
+				<button
+					class="rounded-lg border-0 bg-raised px-3 py-2 text-ink"
+					onclick={() => upload(m)}
+					aria-label="Upload to OpenStreetMap as a note"
+					title="Upload as OSM note"><Upload size={18} /></button
+				>
+			{/if}
 			<button
 				class="rounded-lg border-0 bg-raised px-3 py-2 text-ink"
 				onclick={() => remove(m)}
