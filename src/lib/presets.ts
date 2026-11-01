@@ -3,7 +3,7 @@
 // https://wiki.openstreetmap.org/wiki/Tag:amenity=charging_station
 
 /** Every speed limit that can be offered, ascending. */
-export const speedLimits = [30, 40, 50, 60, 70, 80, 100, 120, 130];
+export const speedLimits = [30, 40, 50, 60, 70, 80, 90, 100, 120, 130];
 
 /** The speed limits shown until the user chooses their own. */
 export const defaultSpeedLimits = [30, 50, 60, 70, 80, 100];
