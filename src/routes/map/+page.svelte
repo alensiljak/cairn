@@ -644,7 +644,7 @@
 				<h2 id="note-title" class="m-0 text-lg font-semibold">Add note</h2>
 				<!-- svelte-ignore a11y_autofocus -->
 				<textarea
-					class="mt-3 mb-4 w-full rounded-lg border border-white/20 bg-transparent p-2"
+					class="mt-3 mb-4 box-border block w-full rounded-lg border border-white/20 bg-transparent p-2 text-ink"
 					rows="3"
 					autofocus
 					bind:value={noteText}></textarea>
