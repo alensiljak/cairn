@@ -137,7 +137,9 @@
 				<Menu />
 			</button>
 		{:else}
-			<a class={headerButton} href={resolve('/')} onclick={goBack} aria-label="Back"><ChevronLeft /></a>
+			<a class={headerButton} href={resolve('/')} onclick={goBack} aria-label="Back"
+				><ChevronLeft /></a
+			>
 		{/if}
 		<h1 class="m-0 flex-1 text-[1.1rem]">{title}</h1>
 		{#if category}

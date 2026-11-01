@@ -53,7 +53,8 @@
 				</span>
 				<span>{new Date(m.createdAt).toLocaleString()}</span>
 				{#if m.audio}
-					<audio controls preload="none" class="mt-1 w-full min-w-0"src={audioUrls.get(m.id!)}></audio>
+					<audio controls preload="none" class="mt-1 w-full min-w-0" src={audioUrls.get(m.id!)}
+					></audio>
 				{/if}
 			</div>
 			<button

@@ -15,7 +15,11 @@
 	import {
 		addMarker,
 		deleteMarker,
-		listMarkers, moveMarker, toFeature, type Marker } from '../../lib/markers';
+		listMarkers,
+		moveMarker,
+		toFeature,
+		type Marker
+	} from '../../lib/markers';
 
 	const SOURCE = 'markers';
 	const SELECTED_SOURCE = 'selected';
@@ -477,7 +481,9 @@
 					popup?.remove();
 					setSelected(undefined);
 					// Tapping the pointer itself clears it; anywhere else puts it on that spot.
-					const onPointer = m.getLayer('pointer') && m.queryRenderedFeatures(e.point, { layers: ['pointer'] }).length > 0;
+					const onPointer =
+						m.getLayer('pointer') &&
+						m.queryRenderedFeatures(e.point, { layers: ['pointer'] }).length > 0;
 					setPointer(onPointer ? undefined : { lng: e.lngLat.lng, lat: e.lngLat.lat });
 					return;
 				}
@@ -506,9 +512,7 @@
 					const feature = collection(markers).features.find((x) => x.properties.id === id)!;
 					source.setData({
 						type: 'FeatureCollection',
-						features: [
-							{ ...feature, geometry: { type: 'Point', coordinates: [ll.lng, ll.lat] } }
-						]
+						features: [{ ...feature, geometry: { type: 'Point', coordinates: [ll.lng, ll.lat] } }]
 					});
 				};
 				const onEnd = () => {
@@ -529,7 +533,8 @@
 			// Set explicitly from what is under the pointer: leaving it unset falls back to MapLibre's
 			// grab/grabbing cursor, which could stick after a click on a pin.
 			function updateCursor(e: MapMouseEvent) {
-				const layers = moving !== undefined ? ['markers-selected'] : ['markers', 'markers-selected'];
+				const layers =
+					moving !== undefined ? ['markers-selected'] : ['markers', 'markers-selected'];
 				const over = m.queryRenderedFeatures(e.point, { layers }).length > 0;
 				m.getCanvas().style.cursor = over ? (moving !== undefined ? 'move' : 'pointer') : 'default';
 			}
@@ -608,7 +613,17 @@
 			aria-label="Add note"
 			onclick={() => (noteText = '')}
 		>
-			<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" /></svg>
+			<svg
+				width="28"
+				height="28"
+				viewBox="0 0 24 24"
+				fill="none"
+				stroke="currentColor"
+				stroke-width="2.5"
+				stroke-linecap="round"
+				stroke-linejoin="round"
+				><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" /></svg
+			>
 		</button>
 	{/if}
 	{#if noteText !== undefined}
@@ -632,8 +647,7 @@
 					class="mt-3 mb-4 w-full rounded-lg border border-white/20 bg-transparent p-2"
 					rows="3"
 					autofocus
-					bind:value={noteText}
-				></textarea>
+					bind:value={noteText}></textarea>
 				<div class="flex justify-end gap-2">
 					<button
 						type="button"
@@ -666,7 +680,16 @@
 					aria-label="Cancel"
 					onclick={() => finishMove(false)}
 				>
-					<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M6 6l12 12M18 6L6 18" /></svg>
+					<svg
+						width="28"
+						height="28"
+						viewBox="0 0 24 24"
+						fill="none"
+						stroke="currentColor"
+						stroke-width="3"
+						stroke-linecap="round"
+						stroke-linejoin="round"><path d="M6 6l12 12M18 6L6 18" /></svg
+					>
 				</button>
 				<button
 					type="button"
@@ -675,7 +698,16 @@
 					aria-label="Done"
 					onclick={() => finishMove(true)}
 				>
-					<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 7" /></svg>
+					<svg
+						width="28"
+						height="28"
+						viewBox="0 0 24 24"
+						fill="none"
+						stroke="currentColor"
+						stroke-width="3"
+						stroke-linecap="round"
+						stroke-linejoin="round"><path d="M5 12l5 5L20 7" /></svg
+					>
 				</button>
 			</span>
 		</div>
