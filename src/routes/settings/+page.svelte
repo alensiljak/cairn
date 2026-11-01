@@ -2,12 +2,22 @@
 	import { playSuccess, unlockAudio } from '../../lib/audio';
 	import { basemaps } from '../../lib/basemaps';
 	import { categories } from '../../lib/categories';
+	import { speedLimits } from '../../lib/presets';
 	import { login, logout, osm, osmConfigured } from '../../lib/osm.svelte';
 	import { saveSettings, settings } from '../../lib/settings.svelte';
 
 	function testSound() {
 		unlockAudio();
 		playSuccess();
+	}
+
+	function toggleSpeedLimit(kmh: number) {
+		const on = settings.speedLimits.includes(kmh);
+		if (on && settings.speedLimits.length === 1) return;
+		settings.speedLimits = on
+			? settings.speedLimits.filter((v) => v !== kmh)
+			: [...settings.speedLimits, kmh];
+		saveSettings();
 	}
 
 	const fieldset = 'flex flex-col gap-4 rounded-xl border border-raised';
@@ -31,6 +41,30 @@
 				{/each}
 			</select>
 		</label>
+	</fieldset>
+
+	<fieldset class={fieldset}>
+		<legend>Speed limits</legend>
+		<div>
+			Values to show
+			<small class={hint}>
+				Six fit on a screen; more are reached by swiping up. At least one stays on.
+			</small>
+		</div>
+		<div class="flex flex-wrap gap-2">
+			{#each speedLimits as kmh (kmh)}
+				{@const on = settings.speedLimits.includes(kmh)}
+				<button
+					class="size-12 cursor-pointer rounded-lg border-0 font-bold {on
+						? 'bg-go-dark text-ink'
+						: 'bg-raised text-muted'}"
+					aria-pressed={on}
+					onclick={() => toggleSpeedLimit(kmh)}
+				>
+					{kmh}
+				</button>
+			{/each}
+		</div>
 	</fieldset>
 
 	<fieldset class={fieldset}>

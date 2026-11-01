@@ -1,4 +1,5 @@
 import { DEFAULT_BASEMAP } from './basemaps';
+import { defaultSpeedLimits } from './presets';
 
 export type GpsMode = 'continuous' | 'on-demand';
 
@@ -13,6 +14,8 @@ export interface Settings {
 	voiceSeconds: number;
 	/** Background map (see basemaps.ts). */
 	basemap: string;
+	/** Speed limits (km/h) offered on the speed limits screen. */
+	speedLimits: number[];
 }
 
 const KEY = 'cairn.settings';
@@ -21,7 +24,8 @@ const defaults: Settings = {
 	gpsMode: 'continuous',
 	sound: true,
 	voiceSeconds: 10,
-	basemap: DEFAULT_BASEMAP
+	basemap: DEFAULT_BASEMAP,
+	speedLimits: defaultSpeedLimits
 };
 
 function load(): Settings {
