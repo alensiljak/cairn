@@ -251,8 +251,9 @@
 			const glyph = await glyphImage(item);
 			const color = key.endsWith(UPLOADED_SUFFIX) ? UPLOADED : key === 'voice' ? VOICE : TAGGED;
 			const round = key.startsWith('speed-');
-			const pin = pinImage(color, PIN_SCALE, '#111111', glyph, round);
-			const sel = pinImage(SELECTED, SELECTED_SCALE, '#ffffff', glyph, round);
+			const gray = key.endsWith(UPLOADED_SUFFIX);
+			const pin = pinImage(color, PIN_SCALE, '#111111', glyph, round, gray);
+			const sel = pinImage(SELECTED, SELECTED_SCALE, '#ffffff', glyph, round, gray);
 			if (m.hasImage(`pin-${key}`)) continue;
 			m.addImage(`pin-${key}`, pin.image, { pixelRatio: pin.pixelRatio });
 			m.addImage(`pin-sel-${key}`, sel.image, { pixelRatio: sel.pixelRatio });
@@ -265,7 +266,8 @@
 		scale: number,
 		outline: string,
 		glyph?: HTMLImageElement,
-		round = false
+		round = false,
+		gray = false
 	) {
 		const w = Math.round(30 * scale);
 		const h = Math.round(40 * scale);
@@ -296,8 +298,29 @@
 			// A round sign fills the disc edge to edge; a rectangular one must fit inside it.
 			const side = r * (round ? 1.65 : 1.4);
 			ctx.drawImage(glyph, cx - side / 2, cy - side / 2, side, side);
+			if (gray) desaturate(ctx, cx, cy, side, ratio);
 		}
 		return { image: ctx.getImageData(0, 0, canvas.width, canvas.height), pixelRatio: ratio };
+	}
+
+	/** Turns the pictogram just drawn (a square of the given side around the centre) to greyscale. */
+	function desaturate(
+		ctx: CanvasRenderingContext2D,
+		cx: number,
+		cy: number,
+		side: number,
+		ratio: number
+	) {
+		const x = Math.floor((cx - side / 2) * ratio);
+		const y = Math.floor((cy - side / 2) * ratio);
+		const size = Math.ceil(side * ratio);
+		const data = ctx.getImageData(x, y, size, size);
+		const px = data.data;
+		for (let i = 0; i < px.length; i += 4) {
+			const l = Math.round(0.299 * px[i] + 0.587 * px[i + 1] + 0.114 * px[i + 2]);
+			px[i] = px[i + 1] = px[i + 2] = l;
+		}
+		ctx.putImageData(data, x, y);
 	}
 
 	function setSelected(id: number | undefined) {
