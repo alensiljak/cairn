@@ -197,10 +197,40 @@
 					id: m.id!,
 					label: markerLabel(m),
 					time: new Date(m.createdAt).toLocaleString(),
-					pin: pinKey(m)
+					pin: pinKey(m),
+					direction: bearing(m.tags.direction)
 				}
 			}));
 		return { type: 'FeatureCollection' as const, features };
+	}
+
+	/** The `direction` tag as degrees from north; null if absent or not a plain number (e.g. "forward"). */
+	function bearing(value: string | undefined): number | null {
+		return value && /^\d+(\.\d+)?$/.test(value) ? Number(value) % 360 : null;
+	}
+
+	/** OSM-style view cone pointing north, centred on the image so it can be rotated about the node. */
+	function coneImage() {
+		const size = 120;
+		const ratio = 2;
+		const canvas = document.createElement('canvas');
+		canvas.width = size * ratio;
+		canvas.height = size * ratio;
+		const ctx = canvas.getContext('2d')!;
+		ctx.scale(ratio, ratio);
+		const c = size / 2;
+		const half = (Math.PI / 180) * 30;
+		const up = -Math.PI / 2;
+		ctx.beginPath();
+		ctx.moveTo(c, c);
+		ctx.arc(c, c, c - 2, up - half, up + half);
+		ctx.closePath();
+		ctx.fillStyle = 'rgba(17, 17, 17, 0.55)';
+		ctx.fill();
+		ctx.lineWidth = 1.5;
+		ctx.strokeStyle = '#ffffff';
+		ctx.stroke();
+		return { image: ctx.getImageData(0, 0, canvas.width, canvas.height), pixelRatio: ratio };
 	}
 
 	/** Which pin image a marker uses; the same key means the same pictogram. */
@@ -422,6 +452,22 @@
 						'icon-image': 'pin-pointer',
 						'icon-anchor': 'bottom',
 						'icon-allow-overlap': true
+					}
+				});
+				const cone = coneImage();
+				m.addImage('direction-cone', cone.image, { pixelRatio: cone.pixelRatio });
+				// Under the pins: the cone fans out from the node the pin's tip points at.
+				m.addLayer({
+					id: 'markers-direction',
+					type: 'symbol',
+					source: SOURCE,
+					filter: ['!=', ['get', 'direction'], null],
+					layout: {
+						'icon-image': 'direction-cone',
+						'icon-rotate': ['get', 'direction'],
+						'icon-rotation-alignment': 'map',
+						'icon-allow-overlap': true,
+						'icon-ignore-placement': true
 					}
 				});
 				m.addLayer({
