@@ -13,6 +13,13 @@
 
 {#if marker.audio}
 	<Mic class="h-full w-full" aria-hidden="true" />
+{:else if marker.tags.note}
+	<!-- Yellow post-it note; the ink colour follows the surrounding text. -->
+	<svg viewBox="0 0 24 24" class="h-full w-full" aria-hidden="true">
+		<path d="M3 3h18v12l-6 6H3z" fill="#fdd835" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" />
+		<path d="M21 15h-6v6" fill="#f9a825" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" />
+		<path d="M7 8h10M7 12h6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
+	</svg>
 {:else if marker.tags.traffic_sign === 'maxspeed' && marker.tags.maxspeed}
 	<SpeedSign value={marker.tags.maxspeed} />
 {:else if roadside}

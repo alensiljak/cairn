@@ -29,6 +29,7 @@
 	const TAGGED = '#43a047';
 	// Not red: red is reserved for destructive actions.
 	const SELECTED = '#1e88e5';
+	const POINTER = '#e53935';
 	// Pins are large enough for the pictogram to be recognisable.
 	const PIN_SCALE = 1.3;
 	const SELECTED_SCALE = 1.7;
@@ -182,6 +183,7 @@
 	/** Which pin image a marker uses; the same key means the same pictogram. */
 	function pinKey(m: Marker): string {
 		if (m.audio) return 'voice';
+		if (m.tags.note) return 'note';
 		if (m.tags.traffic_sign === 'maxspeed' && m.tags.maxspeed) return `speed-${m.tags.maxspeed}`;
 		return roadsideFeatureOf(m.tags)?.id ?? 'tagged';
 	}
@@ -360,15 +362,16 @@
 				m.addSource(SOURCE, { type: 'geojson', data });
 				m.addSource(SELECTED_SOURCE, { type: 'geojson', data: EMPTY });
 				m.addSource(POINTER_SOURCE, { type: 'geojson', data: EMPTY });
+				const red = pinImage(POINTER, PIN_SCALE, '#111111');
+				m.addImage('pin-pointer', red.image, { pixelRatio: red.pixelRatio });
 				m.addLayer({
 					id: 'pointer',
-					type: 'circle',
+					type: 'symbol',
 					source: POINTER_SOURCE,
-					paint: {
-						'circle-radius': 9,
-						'circle-color': SELECTED,
-						'circle-stroke-color': '#ffffff',
-						'circle-stroke-width': 3
+					layout: {
+						'icon-image': 'pin-pointer',
+						'icon-anchor': 'bottom',
+						'icon-allow-overlap': true
 					}
 				});
 				m.addLayer({
@@ -480,11 +483,8 @@
 				if (!f || f.geometry.type !== 'Point') {
 					popup?.remove();
 					setSelected(undefined);
-					// Tapping the pointer itself clears it; anywhere else puts it on that spot.
-					const onPointer =
-						m.getLayer('pointer') &&
-						m.queryRenderedFeatures(e.point, { layers: ['pointer'] }).length > 0;
-					setPointer(onPointer ? undefined : { lng: e.lngLat.lng, lat: e.lngLat.lat });
+					// A tap while the pin is shown only hides it; the next one places it.
+					setPointer(pointer ? undefined : { lng: e.lngLat.lng, lat: e.lngLat.lat });
 					return;
 				}
 				setPointer(undefined);
