@@ -605,6 +605,8 @@
 							// Without a login this leaves for OSM's sign-in page.
 							if (await uploadMarker(item)) {
 								showStatus(`Uploaded as note #${item.noteId}.`);
+								// `item` now has `uploadedAt`, so redraw the pin in its muted colour.
+								await refresh();
 								select(id, lon, lat);
 							}
 						} catch (e) {
