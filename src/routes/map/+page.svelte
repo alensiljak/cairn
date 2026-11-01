@@ -216,7 +216,7 @@
 
 	/** OSM-style view cone pointing north, centred on the image so it can be rotated about the node. */
 	function coneImage() {
-		const size = 120;
+		const size = 60;
 		const ratio = 2;
 		const canvas = document.createElement('canvas');
 		canvas.width = size * ratio;
@@ -466,6 +466,8 @@
 					id: 'markers-direction',
 					type: 'symbol',
 					source: SOURCE,
+					// Only when zoomed in: at lower zooms the cones swamp the map.
+					minzoom: 16,
 					filter: ['!=', ['get', 'direction'], null],
 					layout: {
 						'icon-image': 'direction-cone',
