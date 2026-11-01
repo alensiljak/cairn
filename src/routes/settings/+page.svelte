@@ -87,7 +87,7 @@
 		<legend>OpenStreetMap</legend>
 		<div class={label}>
 			<span>
-				{osm.token ? 'Signed in' : 'Not signed in'}
+				{osm.token ? (osm.user ? `Logged in as ${osm.user}` : 'Logged in') : 'Not logged in'}
 				<small class={hint}>
 					{#if !osmConfigured}
 						This build has no OpenStreetMap client id, so uploading is unavailable.
@@ -98,14 +98,14 @@
 			</span>
 			{#if osm.token}
 				<button class="ml-auto rounded-lg border-0 bg-raised px-4 py-2 text-ink" onclick={logout}>
-					Sign out
+					Log out
 				</button>
 			{:else if osmConfigured}
 				<button
 					class="ml-auto rounded-lg border-0 bg-raised px-4 py-2 text-ink"
 					onclick={() => login('/settings')}
 				>
-					Sign in
+					Login
 				</button>
 			{/if}
 		</div>

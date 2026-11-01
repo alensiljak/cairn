@@ -3,7 +3,7 @@
 //
 // Register an OAuth 2 application at <OSM>/oauth2/applications with the `write_notes` permission,
 // "confidential application" unchecked, and `<origin>/oauth/callback` as redirect URI. Its client
-// id goes into VITE_OSM_CLIENT_ID. VITE_OSM_URL points at another OSM server, e.g. the development
+// id goes into VITE_OSM_CLIENT_ID. Also grant `read_prefs`, used to show the user's display name. VITE_OSM_URL points at another OSM server, e.g. the development
 // instance https://master.apis.dev.openstreetmap.org, so tests don't create real notes.
 
 const OSM_URL: string = (import.meta.env.VITE_OSM_URL ?? 'https://www.openstreetmap.org').replace(
@@ -13,6 +13,7 @@ const OSM_URL: string = (import.meta.env.VITE_OSM_URL ?? 'https://www.openstreet
 const CLIENT_ID: string | undefined = import.meta.env.VITE_OSM_CLIENT_ID || undefined;
 
 const TOKEN_KEY = 'cairn.osm-token';
+const USER_KEY = 'cairn.osm-user';
 const FLOW_KEY = 'cairn.osm-flow';
 
 export const osmUrl = OSM_URL;
@@ -27,15 +28,53 @@ function loadToken(): string | undefined {
 	}
 }
 
-export const osm = $state({ token: loadToken() });
+function loadUser(): string | undefined {
+	try {
+		return localStorage.getItem(USER_KEY) ?? undefined;
+	} catch {
+		return undefined;
+	}
+}
+
+/** `user` is the display name, cached so it shows offline; undefined until fetched. */
+export const osm = $state({ token: loadToken(), user: loadUser() });
+
+function store(key: string, value: string | undefined) {
+	try {
+		if (value) localStorage.setItem(key, value);
+		else localStorage.removeItem(key);
+	} catch {
+		// Storage unavailable (private mode): the login lasts for this session only.
+	}
+}
 
 function setToken(token: string | undefined) {
 	osm.token = token;
+	store(TOKEN_KEY, token);
+	if (!token) setUser(undefined);
+}
+
+function setUser(user: string | undefined) {
+	osm.user = user;
+	store(USER_KEY, user);
+}
+
+let userRequested = false;
+
+/** Fetches the display name of the logged-in user, once per page load. Needs `read_prefs`, so a
+ * login made without it stays nameless until the user logs in again; failures are ignored. */
+export async function fetchUser(): Promise<void> {
+	if (!osm.token || osm.user || userRequested) return;
+	userRequested = true;
 	try {
-		if (token) localStorage.setItem(TOKEN_KEY, token);
-		else localStorage.removeItem(TOKEN_KEY);
+		const res = await fetch(`${OSM_URL}/api/0.6/user/details.json`, {
+			headers: { Authorization: `Bearer ${osm.token}` }
+		});
+		if (!res.ok) return;
+		const body = (await res.json()) as { user?: { display_name?: string } };
+		setUser(body.user?.display_name);
 	} catch {
-		// Storage unavailable (private mode): the login lasts for this session only.
+		// Offline: try again on the next page load.
 	}
 }
 
@@ -70,7 +109,7 @@ export async function login(returnTo: string = location.pathname): Promise<void>
 		client_id: CLIENT_ID,
 		redirect_uri: redirectUri(),
 		response_type: 'code',
-		scope: 'write_notes',
+		scope: 'write_notes read_prefs',
 		state,
 		code_challenge: base64url(new Uint8Array(digest)),
 		code_challenge_method: 'S256'
@@ -103,6 +142,7 @@ export async function completeLogin(params: URLSearchParams): Promise<string> {
 	if (!res.ok) throw new Error(`OpenStreetMap refused the sign-in (${res.status}).`);
 	const { access_token } = (await res.json()) as { access_token: string };
 	setToken(access_token);
+	await fetchUser();
 	return flow.returnTo;
 }
 

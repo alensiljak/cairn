@@ -1,7 +1,9 @@
 <script lang="ts">
+	import { onMount } from 'svelte';
 	import { resolve } from '$app/paths';
 	import { page } from '$app/state';
 	import { categories } from './categories';
+	import { fetchUser, login, logout, osm, osmConfigured } from './osm.svelte';
 	import Info from '@lucide/svelte/icons/info';
 	import List from '@lucide/svelte/icons/list';
 	import MapIcon from '@lucide/svelte/icons/map';
@@ -11,6 +13,10 @@
 	let { open = $bindable(false) }: { open: boolean } = $props();
 
 	const close = () => (open = false);
+
+	onMount(fetchUser);
+
+	const link = 'cursor-pointer border-0 bg-transparent p-0 text-link underline [font:inherit]';
 
 	const item =
 		'flex items-center gap-3 rounded-lg border-0 bg-transparent px-2 py-3 text-ink no-underline [font:inherit] aria-[current=page]:bg-raised';
@@ -27,7 +33,7 @@
 ></div>
 
 <nav
-	class="fixed top-0 bottom-0 left-0 z-11 box-border w-[min(18rem,85vw)] overflow-y-auto bg-panel pt-[env(safe-area-inset-top)] pr-2 pb-[env(safe-area-inset-bottom)] pl-[env(safe-area-inset-left)] transition-transform duration-200 {open
+	class="fixed top-0 bottom-0 left-0 z-11 box-border flex flex-col w-[min(18rem,85vw)] overflow-y-auto bg-panel pt-[env(safe-area-inset-top)] pr-2 pb-[env(safe-area-inset-bottom)] pl-[env(safe-area-inset-left)] transition-transform duration-200 {open
 		? 'translate-x-0'
 		: '-translate-x-full'}"
 	aria-label="Menu"
@@ -88,4 +94,20 @@
 	>
 		<Info /> About
 	</a>
+
+	{#if osmConfigured}
+		<div class="mt-auto border-0 border-t border-solid border-line py-3 pl-2 text-sm text-muted">
+			{#if osm.token}
+				<div class="flex items-center gap-2">
+					<span class="min-w-0 flex-1 truncate">
+						{osm.user ? `Logged in as ${osm.user}` : 'Logged in to OpenStreetMap'}
+					</span>
+					<button class={link} onclick={logout}>Log out</button>
+				</div>
+			{:else}
+				<span>Not logged in to OpenStreetMap ·</span>
+				<button class={link} onclick={() => login(page.url.pathname)}>Login</button>
+			{/if}
+		</div>
+	{/if}
 </nav>
