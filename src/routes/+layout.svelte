@@ -144,6 +144,7 @@
 		{/if}
 		<h1 class="m-0 flex-1 text-[1.1rem]">{title}</h1>
 		{#if category}
+			<VoiceButton onclick={() => (voiceOpen = !voiceOpen)} sheetOpen={voiceOpen} />
 			<a
 				class={headerButton}
 				href={resolve('/map')}
@@ -152,7 +153,6 @@
 			>
 				<MapIcon />
 			</a>
-			<VoiceButton sheetOpen={voiceOpen} />
 		{/if}
 	</header>
 	<div class="relative min-h-0 flex-1">
