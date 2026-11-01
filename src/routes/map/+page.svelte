@@ -12,7 +12,10 @@
 	import 'maplibre-gl/dist/maplibre-gl.css';
 	import { getBasemap } from '../../lib/basemaps';
 	import { settings } from '../../lib/settings.svelte';
-	import { deleteMarker, listMarkers, moveMarker, toFeature, type Marker } from '../../lib/markers';
+	import {
+		addMarker,
+		deleteMarker,
+		listMarkers, moveMarker, toFeature, type Marker } from '../../lib/markers';
 
 	const SOURCE = 'markers';
 	const SELECTED_SOURCE = 'selected';
@@ -103,6 +106,50 @@
 		refresh();
 	}
 	let selectedId: number | undefined;
+
+	const POINTER_SOURCE = 'pointer';
+	/** Spot tapped on the map where a manual note can be added. */
+	let pointer = $state<{ lng: number; lat: number } | undefined>();
+	/** Text of the note being written; undefined while the dialog is closed. */
+	let noteText = $state<string | undefined>();
+
+	function setPointer(at: { lng: number; lat: number } | undefined) {
+		pointer = at;
+		const source = map?.getSource(POINTER_SOURCE) as GeoJSONSource | undefined;
+		source?.setData(
+			at
+				? {
+						type: 'FeatureCollection',
+						features: [
+							{
+								type: 'Feature',
+								geometry: { type: 'Point', coordinates: [at.lng, at.lat] },
+								properties: {}
+							}
+						]
+					}
+				: EMPTY
+		);
+	}
+
+	async function saveNote() {
+		const text = noteText?.trim();
+		const at = pointer;
+		noteText = undefined;
+		if (!text || !at) return;
+		const marker = {
+			tags: { note: text },
+			lon: at.lng,
+			lat: at.lat,
+			accuracy: null,
+			heading: null,
+			speed: null
+		};
+		const id = await addMarker(marker);
+		markers = [{ ...marker, id, createdAt: Date.now() }, ...markers];
+		setPointer(undefined);
+		refresh();
+	}
 
 	function label(m: Marker): string {
 		return m.audio
@@ -308,6 +355,18 @@
 
 				m.addSource(SOURCE, { type: 'geojson', data });
 				m.addSource(SELECTED_SOURCE, { type: 'geojson', data: EMPTY });
+				m.addSource(POINTER_SOURCE, { type: 'geojson', data: EMPTY });
+				m.addLayer({
+					id: 'pointer',
+					type: 'circle',
+					source: POINTER_SOURCE,
+					paint: {
+						'circle-radius': 9,
+						'circle-color': SELECTED,
+						'circle-stroke-color': '#ffffff',
+						'circle-stroke-width': 3
+					}
+				});
 				m.addLayer({
 					id: 'markers',
 					type: 'symbol',
@@ -417,8 +476,12 @@
 				if (!f || f.geometry.type !== 'Point') {
 					popup?.remove();
 					setSelected(undefined);
+					// Tapping the pointer itself clears it; anywhere else puts it on that spot.
+					const onPointer = m.getLayer('pointer') && m.queryRenderedFeatures(e.point, { layers: ['pointer'] }).length > 0;
+					setPointer(onPointer ? undefined : { lng: e.lngLat.lng, lat: e.lngLat.lat });
 					return;
 				}
+				setPointer(undefined);
 				const [lon, lat] = f.geometry.coordinates;
 				select(f.properties.id, lon, lat);
 			});
@@ -532,6 +595,59 @@
 						onclick={confirmDelete}
 					>
 						Delete
+					</button>
+				</div>
+			</div>
+		</div>
+	{/if}
+	{#if pointer && moving === undefined}
+		<button
+			type="button"
+			class="absolute right-4 bottom-8 flex h-14 w-14 items-center justify-center rounded-full bg-[#fbc02d] text-[#111111] shadow-lg transition active:scale-95"
+			title="Add note"
+			aria-label="Add note"
+			onclick={() => (noteText = '')}
+		>
+			<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" /></svg>
+		</button>
+	{/if}
+	{#if noteText !== undefined}
+		<div
+			class="absolute inset-0 flex items-center justify-center bg-black/50 px-6"
+			role="presentation"
+			onclick={() => (noteText = undefined)}
+		>
+			<div
+				class="w-full max-w-sm rounded-2xl bg-panel p-5 shadow-xl"
+				role="dialog"
+				aria-modal="true"
+				aria-labelledby="note-title"
+				tabindex="-1"
+				onclick={(e) => e.stopPropagation()}
+				onkeydown={(e) => e.key === 'Escape' && (noteText = undefined)}
+			>
+				<h2 id="note-title" class="m-0 text-lg font-semibold">Add note</h2>
+				<!-- svelte-ignore a11y_autofocus -->
+				<textarea
+					class="mt-3 mb-4 w-full rounded-lg border border-white/20 bg-transparent p-2"
+					rows="3"
+					autofocus
+					bind:value={noteText}
+				></textarea>
+				<div class="flex justify-end gap-2">
+					<button
+						type="button"
+						class="rounded-lg px-4 py-2 transition active:scale-95"
+						onclick={() => (noteText = undefined)}
+					>
+						Cancel
+					</button>
+					<button
+						type="button"
+						class="rounded-lg bg-[#43a047] px-4 py-2 font-semibold text-white transition active:scale-95"
+						onclick={saveNote}
+					>
+						Save
 					</button>
 				</div>
 			</div>
