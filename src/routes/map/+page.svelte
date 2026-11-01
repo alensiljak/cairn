@@ -553,20 +553,68 @@
 				popup = p;
 			}
 
+			// Set by a long press; the click that ends it must not clear the pointer just placed.
+			let suppressClick = false;
 			m.on('click', (e) => {
 				if (moving !== undefined) return;
+				if (suppressClick) {
+					suppressClick = false;
+					return;
+				}
 				const f = m.queryRenderedFeatures(e.point, { layers: ['markers', 'markers-selected'] })[0];
 				if (!f || f.geometry.type !== 'Point') {
 					popup?.remove();
 					setSelected(undefined);
-					// A tap while the pin is shown only hides it; the next one places it.
-					setPointer(pointer ? undefined : { lng: e.lngLat.lng, lat: e.lngLat.lat });
+					setPointer(undefined);
 					return;
 				}
 				setPointer(undefined);
 				const [lon, lat] = f.geometry.coordinates;
 				select(f.properties.id, lon, lat);
 			});
+
+			// A long press on empty map places the pointer; a plain tap only clears it.
+			const LONG_PRESS_MS = 500;
+			const LONG_PRESS_SLOP = 10;
+			let pressTimer: ReturnType<typeof setTimeout> | undefined;
+			let pressStart: { x: number; y: number } | undefined;
+			function cancelPress() {
+				clearTimeout(pressTimer);
+				pressTimer = undefined;
+				pressStart = undefined;
+			}
+			function startPress(e: MapMouseEvent | MapTouchEvent) {
+				cancelPress();
+				suppressClick = false;
+				if (moving !== undefined) return;
+				if ('touches' in e.originalEvent && e.originalEvent.touches.length > 1) return;
+				const hit = m.queryRenderedFeatures(e.point, { layers: ['markers', 'markers-selected'] });
+				if (hit.length > 0) return;
+				pressStart = { x: e.point.x, y: e.point.y };
+				const at = { lng: e.lngLat.lng, lat: e.lngLat.lat };
+				pressTimer = setTimeout(() => {
+					pressTimer = undefined;
+					suppressClick = true;
+					popup?.remove();
+					setSelected(undefined);
+					setPointer(at);
+				}, LONG_PRESS_MS);
+			}
+			function movePress(e: MapMouseEvent | MapTouchEvent) {
+				if (!pressStart) return;
+				if (Math.hypot(e.point.x - pressStart.x, e.point.y - pressStart.y) > LONG_PRESS_SLOP) {
+					cancelPress();
+				}
+			}
+			m.on('mousedown', startPress);
+			m.on('touchstart', startPress);
+			m.on('mousemove', movePress);
+			m.on('touchmove', movePress);
+			m.on('mouseup', cancelPress);
+			m.on('touchend', cancelPress);
+			m.on('touchcancel', cancelPress);
+			m.on('dragstart', cancelPress);
+			m.on('zoomstart', cancelPress);
 			// Drag the selected pin while in move mode. The pin's tip is its position, so the grab
 			// offset (pointer to tip) is kept constant instead of snapping the tip to the pointer.
 			function startDrag(e: MapMouseEvent | MapTouchEvent) {
