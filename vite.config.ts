@@ -18,7 +18,7 @@ export default defineConfig({
 		tailwindcss(),
 		sveltekit({
 			// Static SPA: all work happens client-side (GPS, wake lock, mic, OSM API).
-			adapter: adapter({ fallback: '200.html' })
+			adapter: adapter({ fallback: 'index.html' })
 		})
 	],
 	server: { https, host: true },
