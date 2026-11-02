@@ -1,18 +1,22 @@
 <script lang="ts">
 	import Mic from '@lucide/svelte/icons/mic';
+	import AmenitySign from './AmenitySign.svelte';
 	import RoadsideSign from './RoadsideSign.svelte';
 	import SpeedSign from './SpeedSign.svelte';
-	import { roadsideFeatureOf } from './presets';
+	import { amenityFeatureOf, roadsideFeatureOf } from './presets';
 	import type { Marker } from './markers';
 
 	// The same icon the marker's button shows, so records are easy to tell apart in a list.
 	let { marker }: { marker: Marker } = $props();
 
 	const roadside = $derived(roadsideFeatureOf(marker.tags));
+	const amenity = $derived(amenityFeatureOf(marker.tags));
 </script>
 
 {#if marker.audio}
 	<Mic class="h-full w-full" aria-hidden="true" />
+{:else if amenity}
+	<AmenitySign kind={amenity.id} />
 {:else if marker.tags.note}
 	<!-- Yellow post-it note; the ink colour follows the surrounding text. -->
 	<svg viewBox="0 0 24 24" class="h-full w-full" aria-hidden="true">

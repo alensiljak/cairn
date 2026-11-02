@@ -9,11 +9,14 @@
 		listMarkers,
 		markerLabel,
 		purgeUploaded,
+		setDetails,
 		setNote,
 		type Marker
 	} from '../../lib/markers';
+	import EditDialog from '../../lib/EditDialog.svelte';
 	import NoteDialog from '../../lib/NoteDialog.svelte';
 	import { osmUrl } from '../../lib/osm.svelte';
+	import { describeDetails, fieldsOf, type Field } from '../../lib/presets';
 	import { canUpload, uploadMarker } from '../../lib/upload';
 
 	let markers = $state<Marker[]>([]);
@@ -66,6 +69,30 @@
 		await refresh();
 	}
 
+	/** The item whose details are being edited; the dialog is closed while undefined. */
+	let editing = $state<{ marker: Marker; fields: Field[]; values: Record<string, string> }>();
+
+	function edit(m: Marker) {
+		const fields = fieldsOf(m.tags);
+		editing = {
+			marker: m,
+			fields,
+			values: Object.fromEntries(fields.map((f) => [f.key, m.tags[f.key] ?? '']))
+		};
+	}
+
+	async function saveDetails() {
+		if (!editing) return;
+		const { marker, fields, values } = editing;
+		editing = undefined;
+		await setDetails(
+			marker.id!,
+			fields.map((f) => f.key),
+			values
+		);
+		await refresh();
+	}
+
 	async function purge() {
 		const n = uploadedCount;
 		if (!(await confirmDialog(`Delete ${n} uploaded ${n === 1 ? 'item' : 'items'}?`, 'Purge')))
@@ -83,6 +110,15 @@
 		bind:text={transcribing.text}
 		onsave={saveTranscript}
 		oncancel={() => (transcribing = undefined)}
+	/>
+{/if}
+{#if editing}
+	<EditDialog
+		title={markerLabel(editing.marker)}
+		fields={editing.fields}
+		bind:values={editing.values}
+		onsave={saveDetails}
+		oncancel={() => (editing = undefined)}
 	/>
 {/if}
 {#if error}
@@ -105,6 +141,7 @@
 						? `${m.lat.toFixed(5)}, ${m.lon.toFixed(5)}`
 						: 'No position'}
 				</span>
+				{#if describeDetails(m.tags)}<span>{describeDetails(m.tags)}</span>{/if}
 				<span>{new Date(m.createdAt).toLocaleString()}</span>
 				{#if m.audio}
 					<audio controls preload="none" class="mt-1 w-full min-w-0" src={audioUrls.get(m.id!)}
@@ -117,6 +154,14 @@
 					onclick={() => (transcribing = { id: m.id!, text: m.tags.note ?? '' })}
 					aria-label="Transcribe"
 					title="Transcribe"><Pencil size={18} /></button
+				>
+			{/if}
+			{#if !m.audio && !m.uploadedAt && fieldsOf(m.tags).length > 0}
+				<button
+					class="rounded-lg border-0 bg-raised px-3 py-2 text-ink"
+					onclick={() => edit(m)}
+					aria-label="Edit details"
+					title="Edit details"><Pencil size={18} /></button
 				>
 			{/if}
 			{#if m.uploadedAt}

@@ -31,7 +31,7 @@
 		<div class="flex justify-end gap-2">
 			<button
 				type="button"
-				class="rounded-lg px-4 py-2 transition active:scale-95"
+				class="rounded-lg border-0 bg-transparent px-4 py-2 text-ink transition active:scale-95"
 				onclick={oncancel}
 			>
 				Cancel

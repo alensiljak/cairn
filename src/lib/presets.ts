@@ -71,7 +71,111 @@ export function roadsideFeatureOf(tags: Record<string, string>) {
 	});
 }
 
-// Planned categories:
-//   petrol station  amenity=fuel
-//   parking         amenity=parking
-//   charger         amenity=charging_station
+/** A detail of a feature that is filled in later, in the editor, never while driving. */
+export interface Field {
+	key: string;
+	label: string;
+	/** Fixed choices (shown as buttons); free text if absent. */
+	options?: readonly { value: string; label: string }[];
+	/** Hint for free text fields. */
+	placeholder?: string;
+}
+
+const yesNo = [
+	{ value: 'yes', label: 'Yes' },
+	{ value: 'no', label: 'No' }
+] as const;
+
+const fee: Field = { key: 'fee', label: 'Fee', options: yesNo };
+const name: Field = { key: 'name', label: 'Name' };
+const operator: Field = { key: 'operator', label: 'Operator' };
+
+/**
+ * Amenities. One tap saves only `amenity=*`; the `fields` are details added afterwards in the
+ * editor. Unlike the roadside features they match on `amenity` alone, as the editor adds tags.
+ * https://wiki.openstreetmap.org/wiki/Tag:amenity=parking
+ * https://wiki.openstreetmap.org/wiki/Tag:amenity=charging_station
+ * https://wiki.openstreetmap.org/wiki/Tag:amenity=car_wash
+ */
+export const amenityFeatures = [
+	{
+		id: 'parking',
+		label: 'Parking',
+		amenity: 'parking',
+		fields: [
+			{
+				key: 'parking',
+				label: 'Type',
+				options: [
+					{ value: 'street_side', label: 'Street side' },
+					{ value: 'surface', label: 'Parking lot' },
+					{ value: 'multi-storey', label: 'Multi-storey' },
+					{ value: 'underground', label: 'Underground' },
+					{ value: 'rooftop', label: 'Rooftop' }
+				]
+			},
+			fee,
+			{
+				key: 'access',
+				label: 'Access',
+				options: [
+					{ value: 'yes', label: 'Public' },
+					{ value: 'customers', label: 'Customers' },
+					{ value: 'private', label: 'Private' }
+				]
+			},
+			{ key: 'capacity', label: 'Spaces', placeholder: 'Number of spaces' },
+			name
+		] satisfies Field[]
+	},
+	{
+		id: 'charging-station',
+		label: 'Charging station',
+		amenity: 'charging_station',
+		fields: [
+			{ key: 'capacity', label: 'Charging points', placeholder: 'Number of points' },
+			fee,
+			operator,
+			name
+		] satisfies Field[]
+	},
+	{
+		id: 'car-wash',
+		label: 'Car wash',
+		amenity: 'car_wash',
+		fields: [
+			{ key: 'self_service', label: 'Self service', options: yesNo },
+			{ key: 'automated', label: 'Automated', options: yesNo },
+			fee,
+			name
+		] satisfies Field[]
+	}
+] as const;
+
+export type AmenityId = (typeof amenityFeatures)[number]['id'];
+
+export function amenityFeatureOf(tags: Record<string, string>) {
+	return amenityFeatures.find((f) => f.amenity === tags.amenity);
+}
+
+/** Free text shared by every editable feature; becomes the OSM note for mappers. */
+export const noteField: Field = { key: 'note', label: 'Note' };
+
+/** The details that can be edited for a marker with these tags; none if it has no editor. */
+export function fieldsOf(tags: Record<string, string>): Field[] {
+	const feature = amenityFeatureOf(tags);
+	return feature ? [...feature.fields, noteField] : [];
+}
+
+/** The filled-in details as short text, e.g. "Multi-storey · Fee: Yes"; empty if there are none. */
+export function describeDetails(tags: Record<string, string>): string {
+	return fieldsOf(tags)
+		.filter((f) => f.key !== 'name' && tags[f.key])
+		.map((f) => {
+			const shown = f.options?.find((o) => o.value === tags[f.key])?.label ?? tags[f.key];
+			return f.key === 'parking' ? shown : `${f.label}: ${shown}`;
+		})
+		.join(' · ');
+}
+
+// Planned: petrol station (amenity=fuel).

@@ -5,6 +5,8 @@
 // What was mapped is stored as real OSM tags (e.g. traffic_sign=maxspeed, maxspeed=50), so
 // export/upload needs no translation and new categories need no schema change.
 
+import { amenityFeatureOf } from './presets';
+
 export interface Marker {
 	id?: number;
 	/** OSM tags of the node to create. */
@@ -131,6 +133,8 @@ export async function listMarkers(): Promise<Marker[]> {
 /** What the marker is called in the app (pop-up, list) and in its OSM note. */
 export function markerLabel(m: Marker): string {
 	if (m.audio) return m.voiceNo ? `Voice note #${m.voiceNo}` : 'Voice note';
+	const amenity = amenityFeatureOf(m.tags);
+	if (amenity) return m.tags.name ? `${amenity.label}: ${m.tags.name}` : amenity.label;
 	return Object.entries(m.tags)
 		.map(([k, v]) => `${k}=${v}`)
 		.join(' ');
@@ -149,6 +153,25 @@ export async function setNote(id: number, text: string): Promise<void> {
 	if (!marker) return;
 	const { note: _, ...tags } = marker.tags;
 	await request(store.put({ ...marker, tags: text ? { ...tags, note: text } : tags }));
+}
+
+/**
+ * Replaces the tags of the given editor `keys` with `values`, leaving all other tags (what the
+ * one tap saved, `direction`, ...) untouched. Empty values remove the tag.
+ */
+export async function setDetails(
+	id: number,
+	keys: string[],
+	values: Record<string, string>
+): Promise<Record<string, string> | undefined> {
+	const db = await openDb();
+	const store = db.transaction(STORE, 'readwrite').objectStore(STORE);
+	const marker = (await request(store.get(id))) as Marker | undefined;
+	if (!marker) return undefined;
+	const tags = Object.fromEntries(Object.entries(marker.tags).filter(([k]) => !keys.includes(k)));
+	for (const k of keys) if (values[k]?.trim()) tags[k] = values[k].trim();
+	await request(store.put({ ...marker, tags }));
+	return tags;
 }
 
 export async function markUploaded(id: number, noteId: number, uploadedAt: number): Promise<void> {

@@ -1,6 +1,13 @@
 <script lang="ts">
 	import { flushSync, mount, onDestroy, onMount, unmount } from 'svelte';
-	import { roadsideFeatureOf } from '../../lib/presets';
+	import {
+		amenityFeatureOf,
+		describeDetails,
+		fieldsOf,
+		roadsideFeatureOf,
+		type Field
+	} from '../../lib/presets';
+	import EditDialog from '../../lib/EditDialog.svelte';
 	import MarkerIcon from '../../lib/MarkerIcon.svelte';
 	import type {
 		GeoJSONSource,
@@ -21,6 +28,7 @@
 		listMarkers,
 		markerLabel,
 		moveMarker,
+		setDetails,
 		setNote,
 		toFeature,
 		type Marker
@@ -144,6 +152,29 @@
 	 */
 	let noteDialog = $state<{ title: string; text: string; id?: number } | undefined>();
 
+	/** The item whose details are being edited; the dialog is closed while undefined. */
+	let editing = $state<{
+		id: number;
+		title: string;
+		fields: Field[];
+		values: Record<string, string>;
+	}>();
+
+	async function saveDetails() {
+		if (!editing) return;
+		const { id, fields, values } = editing;
+		editing = undefined;
+		const tags = await setDetails(
+			id,
+			fields.map((f) => f.key),
+			values
+		);
+		const item = markers.find((x) => x.id === id);
+		if (item && tags) item.tags = tags;
+		popup?.remove();
+		refresh();
+	}
+
 	function setPointer(at: { lng: number; lat: number } | undefined) {
 		pointer = at;
 		const source = map?.getSource(POINTER_SOURCE) as GeoJSONSource | undefined;
@@ -245,6 +276,8 @@
 
 	function pinBase(m: Marker): string {
 		if (m.audio) return 'voice';
+		const amenity = amenityFeatureOf(m.tags);
+		if (amenity) return amenity.id;
 		if (m.tags.note) return 'note';
 		if (m.tags.traffic_sign === 'maxspeed' && m.tags.maxspeed) return `speed-${m.tags.maxspeed}`;
 		return roadsideFeatureOf(m.tags)?.id ?? 'tagged';
@@ -577,6 +610,28 @@
 					};
 					actions.append(transcribe);
 				}
+				if (item && !item.audio && !item.uploadedAt && fieldsOf(item.tags).length > 0) {
+					const details = document.createElement('button');
+					details.type = 'button';
+					details.className = 'cairn-popup-button';
+					details.title = 'Edit details';
+					details.setAttribute('aria-label', 'Edit details');
+					// Pencil (lucide "pencil").
+					details.innerHTML = labelled(
+						'<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>',
+						'Edit'
+					);
+					details.onclick = () => {
+						const fields = fieldsOf(item.tags);
+						editing = {
+							id,
+							title: markerLabel(item),
+							fields,
+							values: Object.fromEntries(fields.map((f) => [f.key, item.tags[f.key] ?? '']))
+						};
+					};
+					actions.append(details);
+				}
 				if (item?.uploadedAt) {
 					const note = document.createElement('a');
 					note.className = 'cairn-popup-button cairn-popup-link';
@@ -621,7 +676,14 @@
 				secondary.append(move, remove);
 				const text = document.createElement('div');
 				text.className = 'cairn-popup-text';
-				text.append(title, time);
+				text.append(title);
+				const summary = describeDetails(item?.tags ?? {});
+				if (summary) {
+					const details = document.createElement('div');
+					details.textContent = summary;
+					text.append(details);
+				}
+				text.append(time);
 				const header = document.createElement('div');
 				header.className = 'cairn-popup-header';
 				const marker = markers.find((x) => x.id === id);
@@ -853,6 +915,15 @@
 				><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" /></svg
 			>
 		</button>
+	{/if}
+	{#if editing}
+		<EditDialog
+			title={editing.title}
+			fields={editing.fields}
+			bind:values={editing.values}
+			onsave={saveDetails}
+			oncancel={() => (editing = undefined)}
+		/>
 	{/if}
 	{#if noteDialog}
 		<NoteDialog
