@@ -6,7 +6,9 @@ declare const self: ServiceWorkerGlobalScope;
 
 const CACHE = `cairn-${version}`;
 // SPA fallback page written by adapter-static (see vite.config.ts); it serves every route.
-const SHELL = '/index.html';
+// Not index.html: Cloudflare redirects /index.html to /, and a service worker can't answer a
+// navigation with a redirected response, so the installed app failed with "site can't be reached".
+const SHELL = '/200.html';
 const toUrl = ({ path }: { path: string }) => (path.startsWith('/') ? path : `/${path}`);
 const PRECACHE = [...immutable.map(toUrl), ...assets.map(toUrl), SHELL];
 
