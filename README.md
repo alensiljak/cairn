@@ -34,6 +34,8 @@ Cairn is a tool to help map roadside features in OpenStreetMap. It is designed t
 
 ## Development
 
+The main repo is on [Codeberg](https://codeberg.org/alensiljak/cairn), backup on [Github](https://github.com/alensiljak/cairn).
+
 Setup.
 Infrastructure frameworks are maintained using `mise`, so set that up first.
 
