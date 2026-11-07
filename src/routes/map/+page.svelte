@@ -698,7 +698,11 @@
 				body.append(header);
 				if (actions.childElementCount) body.append(actions);
 				body.append(secondary);
-				const p = new maplibre.Popup({ offset: [0, -44], className: 'cairn-popup-root', maxWidth: '300px' })
+				const p = new maplibre.Popup({
+					offset: [0, -44],
+					className: 'cairn-popup-root',
+					maxWidth: '300px'
+				})
 					.setLngLat([lon, lat])
 					.setDOMContent(body)
 					.addTo(m);
