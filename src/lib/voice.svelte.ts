@@ -29,7 +29,18 @@ const BITS_PER_SECOND = 24000;
 // Lets the start beep die away so it is not recorded.
 const BEEP_GAP_MS = 250;
 
+// The microphone is opened ahead of the tap ("armed") because a cold start garbles the first
+// moments: the capture pipeline and echo/noise processing need time to settle. It is released
+// when the sheet closes, or after this much idle time.
+const ARM_IDLE_MS = 30_000;
+
 let recorder: MediaRecorder | undefined;
+let stream: MediaStream | undefined;
+let acquiring: Promise<MediaStream> | undefined;
+let stopMeter: (() => void) | undefined;
+/** Whether the sheet is open, i.e. whether the microphone should be kept ready. */
+let wanted = false;
+let idleTimer: ReturnType<typeof setTimeout> | undefined;
 let messageTimer: ReturnType<typeof setTimeout> | undefined;
 
 function say(message: string, ok: boolean) {
@@ -64,6 +75,55 @@ function startMeter(stream: MediaStream): () => void {
 	};
 }
 
+/** The open microphone stream, opened if needed. Concurrent callers share one request. */
+function acquire(): Promise<MediaStream> {
+	if (stream?.getAudioTracks().some((t) => t.readyState === 'live')) {
+		ensureMeter();
+		return Promise.resolve(stream);
+	}
+	acquiring ??= navigator.mediaDevices
+		.getUserMedia({ audio: { channelCount: 1, noiseSuppression: true, echoCancellation: true } })
+		.then((s) => {
+			stream = s;
+			ensureMeter();
+			return s;
+		})
+		.finally(() => (acquiring = undefined));
+	return acquiring;
+}
+
+/** The meter needs the audio context, which only exists once audio has been unlocked by a tap. */
+function ensureMeter() {
+	if (stream && !stopMeter && getAudioContext()) stopMeter = startMeter(stream);
+}
+
+function release() {
+	clearTimeout(idleTimer);
+	stopMeter?.();
+	stopMeter = undefined;
+	stream?.getTracks().forEach((t) => t.stop());
+	stream = undefined;
+}
+
+/** Open the microphone ahead of time, so the first words of a note are not lost. */
+export async function armVoice() {
+	wanted = true;
+	if (voice.phase !== 'idle' || !navigator.mediaDevices?.getUserMedia) return;
+	try {
+		await acquire();
+	} catch {
+		return; // reported when the note is actually started
+	}
+	clearTimeout(idleTimer);
+	idleTimer = setTimeout(() => voice.phase === 'idle' && release(), ARM_IDLE_MS);
+}
+
+/** Release the microphone; one in use by a running note is released when that note ends. */
+export function disarmVoice() {
+	wanted = false;
+	if (voice.phase === 'idle') release();
+}
+
 /**
  * Start a voice note, or end the one in progress early.
  * Resolves, once the note is over, to whether it was saved.
@@ -77,12 +137,11 @@ export async function toggleVoice(): Promise<boolean> {
 
 	// Must run synchronously inside the tap, before any await.
 	unlockAudio();
+	clearTimeout(idleTimer);
 	voice.phase = 'starting';
 	voice.message = '';
 
-	let stream: MediaStream | undefined;
 	let ticker: ReturnType<typeof setInterval> | undefined;
-	let stopMeter: (() => void) | undefined;
 	try {
 		if (!navigator.mediaDevices?.getUserMedia || typeof MediaRecorder === 'undefined') {
 			throw new Error('Recording not supported');
@@ -90,11 +149,8 @@ export async function toggleVoice(): Promise<boolean> {
 		// The position that matters is where the note was started, so ask for it right away; it is
 		// awaited only after recording. A note without a position is still worth keeping.
 		const fix = getFix().catch(() => undefined);
-		stream = await navigator.mediaDevices.getUserMedia({
-			audio: { channelCount: 1, noiseSuppression: true, echoCancellation: true }
-		});
-
-		stopMeter = startMeter(stream);
+		// Already open when armed; opened here otherwise.
+		const stream = await acquire();
 		const mimeType = MIME_TYPES.find((t) => MediaRecorder.isTypeSupported(t));
 		const rec = new MediaRecorder(stream, { mimeType, audioBitsPerSecond: BITS_PER_SECOND });
 		recorder = rec;
@@ -141,10 +197,14 @@ export async function toggleVoice(): Promise<boolean> {
 		return false;
 	} finally {
 		clearInterval(ticker);
-		stopMeter?.();
-		stream?.getTracks().forEach((t) => t.stop());
 		recorder = undefined;
 		voice.phase = 'idle';
 		voice.remaining = 0;
+		if (wanted) {
+			// Sheet still open: stay armed for another note.
+			idleTimer = setTimeout(release, ARM_IDLE_MS);
+		} else {
+			release();
+		}
 	}
 }

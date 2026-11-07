@@ -2,7 +2,7 @@
 	import { fly } from 'svelte/transition';
 	import Mic from '@lucide/svelte/icons/mic';
 	import X from '@lucide/svelte/icons/x';
-	import { toggleVoice, voice } from './voice.svelte';
+	import { armVoice, disarmVoice, toggleVoice, voice } from './voice.svelte';
 
 	let { open = $bindable(false) }: { open: boolean } = $props();
 
@@ -16,6 +16,13 @@
 			? 0
 			: 200
 	);
+
+	// Open the microphone as soon as the sheet appears, so it is warm by the time of the tap.
+	$effect(() => {
+		if (!open) return;
+		void armVoice();
+		return disarmVoice;
+	});
 
 	async function tap() {
 		if (await toggleVoice()) setTimeout(() => (open = false), CLOSE_DELAY_MS);
