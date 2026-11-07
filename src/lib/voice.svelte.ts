@@ -150,20 +150,32 @@ export async function toggleVoice(): Promise<boolean> {
 		// awaited only after recording. A note without a position is still worth keeping.
 		const fix = getFix().catch(() => undefined);
 		// Already open when armed; opened here otherwise.
-		const stream = await acquire();
-		const mimeType = MIME_TYPES.find((t) => MediaRecorder.isTypeSupported(t));
-		const rec = new MediaRecorder(stream, { mimeType, audioBitsPerSecond: BITS_PER_SECOND });
-		recorder = rec;
-		const chunks: Blob[] = [];
-		rec.ondataavailable = (e) => {
-			if (e.data.size) chunks.push(e.data);
-		};
-		const stopped = new Promise<void>((resolve) => (rec.onstop = () => resolve()));
+		await acquire();
 
 		if (settings.sound) playRecordStart();
 		await new Promise((resolve) => setTimeout(resolve, BEEP_GAP_MS));
 
-		rec.start();
+		const chunks: Blob[] = [];
+		let stopped!: Promise<void>;
+		const begin = (s: MediaStream) => {
+			const mimeType = MIME_TYPES.find((t) => MediaRecorder.isTypeSupported(t));
+			const r = new MediaRecorder(s, { mimeType, audioBitsPerSecond: BITS_PER_SECOND });
+			r.ondataavailable = (e) => {
+				if (e.data.size) chunks.push(e.data);
+			};
+			stopped = new Promise<void>((resolve) => (r.onstop = () => resolve()));
+			r.start();
+			return r;
+		};
+		let rec: MediaRecorder;
+		try {
+			rec = begin(await acquire());
+		} catch {
+			// The armed stream went stale (track ended, device switched): retry once with a fresh one.
+			release();
+			rec = begin(await acquire());
+		}
+		recorder = rec;
 		voice.remaining = settings.voiceSeconds;
 		voice.phase = 'recording';
 		ticker = setInterval(() => {

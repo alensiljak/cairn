@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { untrack } from 'svelte';
 	import { fly } from 'svelte/transition';
 	import Mic from '@lucide/svelte/icons/mic';
 	import X from '@lucide/svelte/icons/x';
@@ -20,8 +21,9 @@
 	// Open the microphone as soon as the sheet appears, so it is warm by the time of the tap.
 	$effect(() => {
 		if (!open) return;
-		void armVoice();
-		return disarmVoice;
+		// Untracked: otherwise every change of `voice.phase` would re-run this and release the mic.
+		untrack(() => void armVoice());
+		return () => untrack(disarmVoice);
 	});
 
 	async function tap() {

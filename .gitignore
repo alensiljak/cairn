@@ -10,3 +10,6 @@ vite.config.ts.timestamp-*
 
 # certificates
 *.pem
+
+# temp files
+.wrangler/
